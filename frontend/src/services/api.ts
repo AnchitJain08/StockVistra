@@ -7,8 +7,8 @@ import {
     calculateATMStrike,
 } from '../constants/symbols';
 
-// Backend server URL
-const BASE_URL = 'https://stockvistra-backend.onrender.com';
+// Proxy server URL
+const PROXY_URL = `http://${window.location.hostname}:4000/api`;
 
 // PCR Thresholds
 const PCR_THRESHOLDS = {
@@ -52,7 +52,7 @@ export const api = {
     async getOptionChain(symbol: string): Promise<{ optionChain: OptionChainData[], metrics: DetailedMetrics }> {
         try {
             const type = getSymbolType(symbol);
-            const response = await axios.get(`${BASE_URL}/option-chain/${type}/${symbol}`);
+            const response = await axios.get(`${PROXY_URL}/option-chain/${type}/${symbol}`);
             
             if (!response.data?.filtered?.data) {
                 throw new Error('Invalid data format received from NSE');
@@ -204,43 +204,18 @@ export const api = {
         }
     },
 
-    async getOptionChainMetrics(symbol: string): Promise<DetailedMetrics[]> {
-        try {
-            const type = getSymbolType(symbol);
-            const response = await axios.get(`${BASE_URL}/metrics/${type}/${symbol}`);
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching option chain metrics:', error);
-            throw error;
-        }
-    },
-
-    async getHistoricalData(symbol: string): Promise<any> {
-        try {
-            const type = getSymbolType(symbol);
-            const response = await axios.get(`${BASE_URL}/historical/${type}/${symbol}`);
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching historical data:', error);
-            throw error;
-        }
-    },
-
     isMarketOpen(): boolean {
         const now = new Date();
         const day = now.getDay();
         const hours = now.getHours();
         const minutes = now.getMinutes();
-        
-        // Return false for weekends (Saturday = 6, Sunday = 0)
+        const currentTime = hours * 100 + minutes;
+
+        // Check if it's a weekday (Monday-Friday)
         if (day === 0 || day === 6) return false;
-        
-        // Market hours: 9:15 AM to 3:30 PM
-        if (hours < 9 || hours > 15) return false;
-        if (hours === 9 && minutes < 15) return false;
-        if (hours === 15 && minutes > 30) return false;
-        
-        return true;
+
+        // Market hours: 9:15 AM - 3:30 PM IST
+        return currentTime >= 915 && currentTime <= 1530;
     }
 };
 

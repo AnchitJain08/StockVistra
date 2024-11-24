@@ -1,58 +1,63 @@
-# StockVistra
+# StockVistra Backend
 
-StockVistra is a powerful stock market analysis and visualization platform that helps investors make informed decisions through advanced data analytics and real-time market insights.
+A powerful backend service for stock market analysis and visualization.
 
 ## Features
 
-- Real-time stock market data visualization
-- Technical analysis tools
-- Portfolio management
-- Market trend analysis
-- Customizable dashboards
+- Real-time stock market data processing
+- Market status checking
+- Stock data analysis endpoints
+- RESTful API for stock market operations
 
 ## Tech Stack
 
-- Frontend: React.js with TypeScript
-- Backend: Python (FastAPI)
-- Database: PostgreSQL
-- Real-time data: WebSocket integration
+- Node.js
+- Express.js
+- WebSocket for real-time updates
+- RESTful API architecture
 
-## Getting Started
+## Installation
 
-### Prerequisites
-
-- Node.js (v16 or higher)
-- Python 3.8+
-- PostgreSQL
-
-### Installation
-
-1. Clone the repository
+1. Clone the repository:
 ```bash
 git clone https://github.com/AnchitJain08/StockVistra.git
 cd StockVistra
 ```
 
-2. Set up the frontend
+2. Install dependencies:
 ```bash
-cd frontend
 npm install
+```
+
+3. Start the server:
+```bash
 npm start
 ```
 
-3. Set up the backend
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
+The server will start on port 4000 by default.
+
+## API Endpoints
+
+- `GET /api/market/status` - Check if market is open
+- `GET /api/stock/:symbol` - Get stock data for a specific symbol
+- Additional endpoints documentation coming soon...
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+```
+PORT=4000
+NODE_ENV=development
 ```
 
 ## Contributing
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+This project is licensed under the MIT License - see the LICENSE file for details.
