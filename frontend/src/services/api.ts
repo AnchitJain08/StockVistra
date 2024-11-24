@@ -8,7 +8,7 @@ import {
 } from '../constants/symbols';
 
 // Proxy server URL
-const PROXY_URL = `http://${window.location.hostname}:4000/api`;
+const PROXY_URL = `https://stockvistra-backend.onrender.com`;
 
 // PCR Thresholds
 const PCR_THRESHOLDS = {
