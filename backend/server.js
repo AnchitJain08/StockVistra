@@ -35,7 +35,13 @@ initializeCookies();
 // Refresh cookies every 30 minutes
 setInterval(initializeCookies, 30 * 60 * 1000);
 
-app.get('/api/option-chain/:type/:symbol', async (req, res) => {
+// Health check endpoint
+app.get('/', (req, res) => {
+    res.json({ status: 'ok', message: 'StockVistra Backend is running' });
+});
+
+// Option chain endpoint
+app.get('/option-chain/:type/:symbol', async (req, res) => {
     try {
         const { type, symbol } = req.params;
         const url = type === 'indices' 
@@ -56,8 +62,9 @@ app.get('/api/option-chain/:type/:symbol', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Proxy server running on port ${PORT}`);
-    console.log(`Server is accessible at http://localhost:${PORT} and on your local network`);
+// Use environment variable for port or default to 4000
+const port = process.env.PORT || 4000;
+
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server is running on port ${port}`);
 });
