@@ -4,7 +4,7 @@ const cors = require('cors');
 const https = require('https');
 const app = express();
 
-// Enable CORS for specific origin in production
+// Enable CORS
 app.use(cors({
     origin: process.env.FRONTEND_URL || true,
     credentials: true
@@ -26,22 +26,49 @@ const headers = {
     'Sec-Fetch-Site': 'same-origin'
 };
 
+// Proxy configuration
+const PROXY_LIST = [
+    process.env.PROXY_URL1,
+    process.env.PROXY_URL2,
+    process.env.PROXY_URL3
+].filter(Boolean);
+
+let currentProxyIndex = 0;
 let cookies = '';
 let cookieInitializationAttempts = 0;
 const MAX_INITIALIZATION_ATTEMPTS = 5;
 
 // Create axios instance with custom configuration
-const axiosInstance = axios.create({
-    timeout: 30000,
-    httpsAgent: new https.Agent({
-        rejectUnauthorized: false,
-        keepAlive: true
-    }),
-    maxRedirects: 5,
-    validateStatus: function (status) {
-        return status >= 200 && status < 400;
+const createAxiosInstance = (proxyUrl = null) => {
+    const config = {
+        timeout: 30000,
+        httpsAgent: new https.Agent({
+            rejectUnauthorized: false,
+            keepAlive: true
+        }),
+        maxRedirects: 5,
+        validateStatus: function (status) {
+            return status >= 200 && status < 400;
+        }
+    };
+
+    if (proxyUrl) {
+        config.proxy = {
+            protocol: 'http',
+            host: proxyUrl.split(':')[0],
+            port: proxyUrl.split(':')[1]
+        };
     }
-});
+
+    return axios.create(config);
+};
+
+// Get next proxy from the list
+const getNextProxy = () => {
+    if (!PROXY_LIST.length) return null;
+    currentProxyIndex = (currentProxyIndex + 1) % PROXY_LIST.length;
+    return PROXY_LIST[currentProxyIndex];
+};
 
 // Initialize cookies with retry mechanism
 async function initializeCookies() {
@@ -49,7 +76,6 @@ async function initializeCookies() {
         cookieInitializationAttempts++;
         console.log(`Attempting to initialize cookies (Attempt ${cookieInitializationAttempts}/${MAX_INITIALIZATION_ATTEMPTS})`);
 
-        // Try multiple URLs to get cookies
         const urls = [
             'https://www.nseindia.com',
             'https://www.nseindia.com/market-data',
@@ -57,8 +83,17 @@ async function initializeCookies() {
         ];
 
         for (const url of urls) {
+            const proxy = getNextProxy();
+            const axiosInstance = createAxiosInstance(proxy);
+            
+            console.log(`Attempt ${cookieInitializationAttempts} using ${proxy || 'direct connection'}`);
+
             try {
-                const response = await axiosInstance.get(url, { headers });
+                const response = await axiosInstance.get(url, { 
+                    headers,
+                    timeout: 20000
+                });
+
                 if (response.headers['set-cookie']) {
                     cookies = response.headers['set-cookie'].join(';');
                     cookieInitializationAttempts = 0;
@@ -105,18 +140,24 @@ app.get('/api/health', (req, res) => {
         cookiesInitialized: !!cookies,
         lastInitializationAttempt: new Date().toISOString(),
         initializationAttempts: cookieInitializationAttempts,
+        proxyEnabled: PROXY_LIST.length > 0,
         environment: process.env.NODE_ENV || 'development'
     });
 });
 
 async function fetchOptionChainWithRetry(url, retries = 3) {
     for (let i = 0; i < retries; i++) {
+        const proxy = getNextProxy();
+        const axiosInstance = createAxiosInstance(proxy);
+
         try {
+            console.log(`Fetching data using ${proxy || 'direct connection'}`);
             const response = await axiosInstance.get(url, {
                 headers: {
                     ...headers,
                     Cookie: cookies
-                }
+                },
+                timeout: 20000
             });
 
             if (response.data && response.data.filtered) {
@@ -127,7 +168,7 @@ async function fetchOptionChainWithRetry(url, retries = 3) {
             console.error(`Attempt ${i + 1} failed:`, error.message);
             if (i === retries - 1) throw error;
             await new Promise(resolve => setTimeout(resolve, 2000));
-            await initializeCookies(); // Try to refresh cookies between attempts
+            await initializeCookies();
         }
     }
 }
