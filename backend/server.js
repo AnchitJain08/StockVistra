@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const https = require('https');
 const app = express();
 
 // Enable CORS for specific origin in production
@@ -15,12 +16,32 @@ const headers = {
     'Accept': '*/*',
     'Accept-Language': 'en-US,en;q=0.9',
     'Accept-Encoding': 'gzip, deflate, br',
-    'Connection': 'keep-alive'
+    'Connection': 'keep-alive',
+    'Referer': 'https://www.nseindia.com',
+    'sec-ch-ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin'
 };
 
 let cookies = '';
 let cookieInitializationAttempts = 0;
 const MAX_INITIALIZATION_ATTEMPTS = 5;
+
+// Create axios instance with custom configuration
+const axiosInstance = axios.create({
+    timeout: 30000,
+    httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+        keepAlive: true
+    }),
+    maxRedirects: 5,
+    validateStatus: function (status) {
+        return status >= 200 && status < 400;
+    }
+});
 
 // Initialize cookies with retry mechanism
 async function initializeCookies() {
@@ -28,35 +49,40 @@ async function initializeCookies() {
         cookieInitializationAttempts++;
         console.log(`Attempting to initialize cookies (Attempt ${cookieInitializationAttempts}/${MAX_INITIALIZATION_ATTEMPTS})`);
 
-        const response = await axios.get('https://www.nseindia.com', {
-            headers,
-            timeout: 10000,
-            maxRedirects: 5,
-            validateStatus: function (status) {
-                return status >= 200 && status < 400; // Accept redirects
-            }
-        });
+        // Try multiple URLs to get cookies
+        const urls = [
+            'https://www.nseindia.com',
+            'https://www.nseindia.com/market-data',
+            'https://www.nseindia.com/get-quotes/derivatives'
+        ];
 
-        if (response.headers['set-cookie']) {
-            cookies = response.headers['set-cookie'].join(';');
-            cookieInitializationAttempts = 0; // Reset attempts on success
-            console.log('Cookies initialized successfully');
-            return true;
-        } else {
-            console.error('No cookies received from NSE');
-            throw new Error('No cookies in response');
+        for (const url of urls) {
+            try {
+                const response = await axiosInstance.get(url, { headers });
+                if (response.headers['set-cookie']) {
+                    cookies = response.headers['set-cookie'].join(';');
+                    cookieInitializationAttempts = 0;
+                    console.log(`Cookies initialized successfully from ${url}`);
+                    return true;
+                }
+            } catch (err) {
+                console.log(`Failed to get cookies from ${url}: ${err.message}`);
+                continue;
+            }
         }
+
+        throw new Error('No cookies received from any NSE endpoint');
     } catch (error) {
         console.error('Error initializing cookies:', error.message);
         
         if (cookieInitializationAttempts < MAX_INITIALIZATION_ATTEMPTS) {
-            const delay = Math.min(1000 * Math.pow(2, cookieInitializationAttempts), 30000); // Exponential backoff
+            const delay = Math.min(1000 * Math.pow(2, cookieInitializationAttempts), 30000);
             console.log(`Retrying in ${delay/1000} seconds...`);
             await new Promise(resolve => setTimeout(resolve, delay));
             return initializeCookies();
         } else {
             console.error('Max initialization attempts reached');
-            cookieInitializationAttempts = 0; // Reset for next time
+            cookieInitializationAttempts = 0;
             return false;
         }
     }
@@ -67,20 +93,44 @@ async function initializeCookies() {
     await initializeCookies();
 })();
 
-// Refresh cookies every 15 minutes
+// Refresh cookies every 10 minutes
 setInterval(async () => {
     console.log('Refreshing cookies...');
     await initializeCookies();
-}, 15 * 60 * 1000);
+}, 10 * 60 * 1000);
 
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
         cookiesInitialized: !!cookies,
         lastInitializationAttempt: new Date().toISOString(),
-        initializationAttempts: cookieInitializationAttempts
+        initializationAttempts: cookieInitializationAttempts,
+        environment: process.env.NODE_ENV || 'development'
     });
 });
+
+async function fetchOptionChainWithRetry(url, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await axiosInstance.get(url, {
+                headers: {
+                    ...headers,
+                    Cookie: cookies
+                }
+            });
+
+            if (response.data && response.data.filtered) {
+                return response.data;
+            }
+            throw new Error('Invalid response format');
+        } catch (error) {
+            console.error(`Attempt ${i + 1} failed:`, error.message);
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await initializeCookies(); // Try to refresh cookies between attempts
+        }
+    }
+}
 
 app.get('/api/option-chain/:type/:symbol', async (req, res) => {
     try {
@@ -109,21 +159,9 @@ app.get('/api/option-chain/:type/:symbol', async (req, res) => {
             ? `https://www.nseindia.com/api/option-chain-indices?symbol=${symbol}`
             : `https://www.nseindia.com/api/option-chain-equities?symbol=${symbol}`;
 
-        const response = await axios.get(url, {
-            headers: {
-                ...headers,
-                Cookie: cookies,
-                'Referer': 'https://www.nseindia.com'
-            },
-            timeout: 10000
-        });
+        const data = await fetchOptionChainWithRetry(url);
+        res.json(data);
 
-        if (!response.data || !response.data.filtered) {
-            console.error('Invalid response format from NSE');
-            return res.status(502).json({ error: 'Invalid response from NSE' });
-        }
-
-        res.json(response.data);
     } catch (error) {
         console.error('Error fetching data:', error.message);
         
@@ -133,8 +171,8 @@ app.get('/api/option-chain/:type/:symbol', async (req, res) => {
         
         if (error.response) {
             if (error.response.status === 403) {
-                cookies = ''; // Clear cookies on 403
-                await initializeCookies(); // Try to get new cookies
+                cookies = '';
+                await initializeCookies();
                 return res.status(403).json({ 
                     error: 'Session expired', 
                     message: 'Please retry your request' 
