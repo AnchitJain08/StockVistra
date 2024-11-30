@@ -5,8 +5,7 @@ import {
     Box,
     CircularProgress,
     useTheme,
-    Typography,
-    Chip
+    Typography
 } from '@mui/material';
 import { api } from '../services/api';
 import VoiceRecognition from './VoiceRecognition';
@@ -15,9 +14,11 @@ import { AVAILABLE_SYMBOLS } from '../constants/symbols';
 interface StockSelectorProps {
     onSelect: (symbol: string) => void;
     selectedSymbol: string | null;
+    filterSymbols?: string[];
+    hideMic?: boolean;
 }
 
-const StockSelector: React.FC<StockSelectorProps> = ({ onSelect, selectedSymbol }) => {
+const StockSelector: React.FC<StockSelectorProps> = ({ onSelect, selectedSymbol, filterSymbols, hideMic = false }) => {
     const theme = useTheme();
     const [indices, setIndices] = useState<string[]>([]);
     const [equities, setEquities] = useState<string[]>([]);
@@ -30,24 +31,42 @@ const StockSelector: React.FC<StockSelectorProps> = ({ onSelect, selectedSymbol 
             setLoading(true);
             try {
                 const { indices: indicesData, equities: equitiesData } = await api.getStocks();
-                setIndices(indicesData || []);
-                setEquities(equitiesData || []);
+                // Filter the stocks if filterSymbols is provided
+                const filteredIndices = filterSymbols 
+                    ? indicesData?.filter(symbol => filterSymbols.includes(symbol)) 
+                    : indicesData;
+                const filteredEquities = filterSymbols 
+                    ? equitiesData?.filter(symbol => filterSymbols.includes(symbol)) 
+                    : equitiesData;
+                    
+                setIndices(filteredIndices || []);
+                setEquities(filteredEquities || []);
             } catch (error) {
                 console.error('Error fetching stocks:', error);
                 // Fallback to constants if API fails
-                setIndices(Object.keys(AVAILABLE_SYMBOLS.indices));
-                setEquities(Object.keys(AVAILABLE_SYMBOLS.equities));
+                const allIndices = Object.keys(AVAILABLE_SYMBOLS.indices);
+                const allEquities = Object.keys(AVAILABLE_SYMBOLS.equities);
+                
+                // Filter the stocks if filterSymbols is provided
+                const filteredIndices = filterSymbols 
+                    ? allIndices.filter(symbol => filterSymbols.includes(symbol)) 
+                    : allIndices;
+                const filteredEquities = filterSymbols 
+                    ? allEquities.filter(symbol => filterSymbols.includes(symbol)) 
+                    : allEquities;
+                
+                setIndices(filteredIndices);
+                setEquities(filteredEquities);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchStocks();
-    }, []);
+    }, [filterSymbols]);
 
     const handleVoiceResult = (transcript: string) => {
         const cleanTranscript = transcript.toUpperCase().trim();
-        console.log('Processing voice input:', cleanTranscript);
         
         // Try exact match first
         let matchedSymbol = [...indices, ...equities].find(symbol => {
@@ -56,36 +75,54 @@ const StockSelector: React.FC<StockSelectorProps> = ({ onSelect, selectedSymbol 
                    symbol.toUpperCase() === cleanTranscript;
         });
 
-        // If no exact match, try fuzzy matching
-        if (!matchedSymbol) {
-            matchedSymbol = [...indices, ...equities].find(symbol => {
-                const symbolConfig = AVAILABLE_SYMBOLS.indices[symbol] || AVAILABLE_SYMBOLS.equities[symbol];
-                const normalizedName = symbolConfig.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                const normalizedSymbol = symbol.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                const normalizedTranscript = cleanTranscript.replace(/[^a-zA-Z0-9]/g, '');
-                
-                // Try different variations of the transcript
-                const variations = [
-                    normalizedTranscript,
-                    normalizedTranscript.replace(/LIMITED$/, 'LTD'),
-                    normalizedTranscript.replace(/LTD$/, 'LIMITED'),
-                    normalizedTranscript.replace(/NIFTY/, ''),
-                ];
-
-                return variations.some(variation => 
-                    normalizedName.includes(variation) || 
-                    normalizedSymbol.includes(variation) ||
-                    variation.includes(normalizedSymbol)
-                );
-            });
-        }
-
         if (matchedSymbol) {
+            // Exact match found - directly select it
             setInputValue(matchedSymbol);
             onSelect(matchedSymbol);
+            return;
+        }
+
+        // If no exact match, try fuzzy matching
+        const possibleMatches = [...indices, ...equities].map(symbol => {
+            const symbolConfig = AVAILABLE_SYMBOLS.indices[symbol] || AVAILABLE_SYMBOLS.equities[symbol];
+            const normalizedName = symbolConfig.name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            const normalizedSymbol = symbol.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            const normalizedTranscript = cleanTranscript.replace(/[^a-zA-Z0-9]/g, '');
+            
+            // Try different variations of the transcript
+            const variations = [
+                normalizedTranscript,
+                normalizedTranscript.replace(/LIMITED$/, 'LTD'),
+                normalizedTranscript.replace(/LTD$/, 'LIMITED'),
+                normalizedTranscript.replace(/NIFTY/, ''),
+            ];
+
+            const matchScore = variations.some(variation => 
+                normalizedName.includes(variation) || 
+                normalizedSymbol.includes(variation) ||
+                variation.includes(normalizedSymbol)
+            ) ? 1 : 0;
+
+            return {
+                symbol,
+                score: matchScore,
+                name: symbolConfig.name
+            };
+        }).filter(match => match.score > 0);
+
+        if (possibleMatches.length > 0) {
+            // Get the best match and ask for confirmation
+            const bestMatch = possibleMatches[0];
+            const customEvent = new CustomEvent('voiceRecognitionSuggestion', {
+                detail: { 
+                    original: transcript,
+                    suggestion: bestMatch.symbol,
+                    fullName: `${bestMatch.symbol} - ${bestMatch.name}`
+                }
+            });
+            window.dispatchEvent(customEvent);
         } else {
             setInputValue('');
-            // Create a custom error event to trigger the error message in VoiceRecognition
             const customEvent = new CustomEvent('voiceRecognitionError', {
                 detail: { error: `"${transcript}" is not listed in Option Chain` }
             });
@@ -119,14 +156,31 @@ const StockSelector: React.FC<StockSelectorProps> = ({ onSelect, selectedSymbol 
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            width: { xs: '100%', sm: '400px', md: '500px' },
+            width: { xs: '100%', sm: '25rem', md: '31.25rem' },
             backgroundColor: theme.palette.background.paper,
             borderRadius: 1,
             p: 1
         }}>
             <Autocomplete
                 size="small"
-                sx={{ flex: 1 }}
+                sx={{
+                    flex: 1,
+                    '& .MuiInputBase-root': {
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: '12px',
+                    },
+                    '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                            borderRadius: '12px',
+                        },
+                        '&:hover fieldset': {
+                            borderRadius: '12px',
+                        },
+                        '&.Mui-focused fieldset': {
+                            borderRadius: '12px',
+                        },
+                    },
+                }}
                 options={[...indices, ...equities]}
                 value={selectedSymbol}
                 onChange={(_, newValue) => newValue && onSelect(newValue)}
@@ -152,11 +206,11 @@ const StockSelector: React.FC<StockSelectorProps> = ({ onSelect, selectedSymbol 
                     />
                 )}
             />
-            <VoiceRecognition
+            {!hideMic && <VoiceRecognition
                 onResult={handleVoiceResult}
                 isListening={isListening}
                 setIsListening={setIsListening}
-            />
+            />}
         </Box>
     );
 };

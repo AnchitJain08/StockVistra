@@ -52,14 +52,14 @@ const VoiceRecognition: React.FC<VoiceRecognitionProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [hasSound, setHasSound] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState<string>('');
+  const [suggestion, setSuggestion] = useState<{ original: string; suggestion: string; fullName: string } | null>(null);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const clearMessageTimeout = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef<number>(0);
   const maxRetries = 3;
   const hasRecognizedRef = useRef<boolean>(false);
-  const messageTimeoutRef = useRef<NodeJS.Timeout>();
-  const [showMessage, setShowMessage] = useState(false);
 
   const clearTimeouts = () => {
     if (timeoutRef.current) {
@@ -70,23 +70,31 @@ const VoiceRecognition: React.FC<VoiceRecognitionProps> = ({
       clearTimeout(restartTimeoutRef.current);
       restartTimeoutRef.current = null;
     }
-    if (errorTimeoutRef.current) {
-      clearTimeout(errorTimeoutRef.current);
-      errorTimeoutRef.current = null;
-    }
-    if (messageTimeoutRef.current) {
-      clearTimeout(messageTimeoutRef.current);
+    if (clearMessageTimeout.current) {
+      clearTimeout(clearMessageTimeout.current);
+      clearMessageTimeout.current = null;
     }
   };
 
-  const setErrorWithTimeout = (errorMessage: string) => {
-    setError(errorMessage);
-    if (errorTimeoutRef.current) {
-      clearTimeout(errorTimeoutRef.current);
+  const showTemporaryMessage = (message: string, isError: boolean = false, duration: number = 2000) => {
+    if (isError) {
+      setError(message);
+      setInterimTranscript('');
+    } else {
+      setError(null);
+      setInterimTranscript(message);
     }
-    errorTimeoutRef.current = setTimeout(() => {
-      setError('');
-    }, 3000); // Error message will disappear after 3 seconds
+
+    if (clearMessageTimeout.current) {
+      clearTimeout(clearMessageTimeout.current);
+    }
+    clearMessageTimeout.current = setTimeout(() => {
+      if (isError) {
+        setError(null);
+      } else {
+        setInterimTranscript('');
+      }
+    }, duration);
   };
 
   const startRecognition = (recognitionInstance: ISpeechRecognition) => {
@@ -97,7 +105,7 @@ const VoiceRecognition: React.FC<VoiceRecognitionProps> = ({
       hasRecognizedRef.current = false;
     } catch (err) {
       console.error('Error starting recognition:', err);
-      setErrorWithTimeout('Failed to start voice recognition');
+      showTemporaryMessage('Failed to start voice recognition', true);
       setIsListening(false);
     }
   };
@@ -120,7 +128,7 @@ const VoiceRecognition: React.FC<VoiceRecognitionProps> = ({
 
   const toggleListening = () => {
     if (!recognition) {
-      setErrorWithTimeout('Speech recognition not supported');
+      showTemporaryMessage('Speech recognition not supported', true);
       return;
     }
 
@@ -133,13 +141,22 @@ const VoiceRecognition: React.FC<VoiceRecognitionProps> = ({
 
   useEffect(() => {
     const handleCustomError = (event: CustomEvent) => {
-      setErrorWithTimeout(event.detail.error);
+      showTemporaryMessage(event.detail.error, true);
+    };
+
+    const handleSuggestion = (event: CustomEvent) => {
+      setSuggestion(event.detail);
+      setAwaitingConfirmation(true);
+      showTemporaryMessage('Do you mean ' + event.detail.fullName + '? Say yes or no.');
     };
 
     window.addEventListener('voiceRecognitionError', handleCustomError as EventListener);
+    window.addEventListener('voiceRecognitionSuggestion', handleSuggestion as EventListener);
 
     return () => {
       window.removeEventListener('voiceRecognitionError', handleCustomError as EventListener);
+      window.removeEventListener('voiceRecognitionSuggestion', handleSuggestion as EventListener);
+      clearTimeouts();
     };
   }, []);
 
@@ -152,32 +169,28 @@ const VoiceRecognition: React.FC<VoiceRecognitionProps> = ({
         
         recognitionInstance.continuous = true;
         recognitionInstance.interimResults = true;
-        recognitionInstance.maxAlternatives = 5;
+        recognitionInstance.maxAlternatives = 10;
         recognitionInstance.lang = 'en-IN';
 
         recognitionInstance.onstart = () => {
-          console.log('Voice recognition started');
-          setError('');
+          setError(null);
           setHasSound(false);
           setInterimTranscript('');
           
           timeoutRef.current = setTimeout(() => {
             if (!hasSound && !interimTranscript && isListening && !hasRecognizedRef.current) {
-              console.log('No speech detected, stopping...');
-              recognitionInstance.stop();
               if (retryCountRef.current < maxRetries) {
                 retryCountRef.current++;
                 startRecognition(recognitionInstance);
               } else {
-                setErrorWithTimeout('No speech detected. Please try again.');
+                showTemporaryMessage('No speech detected. Please try again.', true);
                 setIsListening(false);
               }
             }
-          }, 5000);
+          }, 2000);
         };
 
         recognitionInstance.onsoundstart = () => {
-          console.log('Sound detected');
           setHasSound(true);
           if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
@@ -186,13 +199,12 @@ const VoiceRecognition: React.FC<VoiceRecognitionProps> = ({
         };
 
         recognitionInstance.onsoundend = () => {
-          console.log('Sound ended');
           if (!hasRecognizedRef.current) {
             restartTimeoutRef.current = setTimeout(() => {
               if (isListening) {
                 recognitionInstance.stop();
               }
-            }, 1500);
+            }, 800);
           }
         };
 
@@ -200,71 +212,68 @@ const VoiceRecognition: React.FC<VoiceRecognitionProps> = ({
           const results = event.results;
           const lastResultIndex = results.length - 1;
           const lastResult = results[lastResultIndex];
-          
-          if (lastResult) {
-            const mostConfidentResult = Array.from({ length: lastResult.length })
-              .map((_, i) => lastResult[i])
-              .reduce((prev, current) => 
-                current.confidence > prev.confidence ? current : prev
-              );
+          const transcript = lastResult[0].transcript.trim().toLowerCase();
 
-            const transcript = mostConfidentResult.transcript.trim();
-            
-            if (lastResult.isFinal) {
-              console.log('Final transcript:', transcript);
-              if (transcript) {
-                hasRecognizedRef.current = true;
-                clearTimeouts();
-                retryCountRef.current = maxRetries;
-                setError('');
-                onResult(transcript);
-                recognitionInstance.stop();
-                setIsListening(false);
-                // Reset message after final result
-                if (messageTimeoutRef.current) {
-                  clearTimeout(messageTimeoutRef.current);
+          // Always show what user is saying
+          showTemporaryMessage(transcript);
+
+          if (lastResult.isFinal) {
+            if (awaitingConfirmation) {
+              if (transcript === 'yes' || transcript.includes('yes')) {
+                if (suggestion) {
+                  onResult(suggestion.suggestion);
+                  hasRecognizedRef.current = true;
+                  setSuggestion(null);
+                  setAwaitingConfirmation(false);
+                  recognitionInstance.stop();
                 }
-                messageTimeoutRef.current = setTimeout(() => {
-                  setShowMessage(false);
-                  setInterimTranscript('');
-                }, 3000);
+              } else if (transcript === 'no' || transcript.includes('no')) {
+                setSuggestion(null);
+                setAwaitingConfirmation(false);
+                showTemporaryMessage('Please try saying the symbol again.');
+              } else {
+                showTemporaryMessage('Please say yes or no. Do you mean ' + suggestion?.fullName + '?');
               }
             } else {
-              setInterimTranscript(transcript);
+              onResult(transcript);
+              hasRecognizedRef.current = true;
+              recognitionInstance.stop();
             }
           }
         };
 
         recognitionInstance.onerror = (event: { error: string }) => {
           console.error('Speech recognition error:', event.error);
-          if (!hasRecognizedRef.current && event.error !== 'no-speech') {
-            setErrorWithTimeout(event.error);
+          if (event.error === 'no-speech') {
+            showTemporaryMessage('No speech detected. Please try again.', true);
+          } else {
+            showTemporaryMessage('Error: ' + event.error, true);
+          }
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
           }
           setIsListening(false);
-          clearTimeouts();
         };
 
         recognitionInstance.onnomatch = () => {
-          console.log('No match found');
           if (!hasRecognizedRef.current) {
-            setErrorWithTimeout('Could not recognize speech. Please try again.');
+            showTemporaryMessage('Could not recognize speech. Please try again.', true);
           }
           setIsListening(false);
         };
 
         recognitionInstance.onend = () => {
-          console.log('Voice recognition ended');
-          setIsListening(false);
-          clearTimeouts();
-          
-          if (!hasSound && !hasRecognizedRef.current && retryCountRef.current >= maxRetries) {
-            setErrorWithTimeout('No speech detected. Please try again.');
+          if (!hasRecognizedRef.current && isListening && retryCountRef.current < maxRetries) {
+            retryCountRef.current++;
+            startRecognition(recognitionInstance);
+          } else {
+            setIsListening(false);
           }
         };
 
         setRecognition(recognitionInstance);
       } else {
-        setErrorWithTimeout('Speech recognition not supported in this browser');
+        showTemporaryMessage('Speech recognition not supported in this browser', true);
       }
     }
 
@@ -277,102 +286,70 @@ const VoiceRecognition: React.FC<VoiceRecognitionProps> = ({
   }, [onResult, setIsListening, hasSound, isListening]);
 
   useEffect(() => {
-    if (error || (isListening && hasSound)) {
-      setShowMessage(true);
-      if (messageTimeoutRef.current) {
-        clearTimeout(messageTimeoutRef.current);
-      }
-      messageTimeoutRef.current = setTimeout(() => {
-        setShowMessage(false);
-        setInterimTranscript('');
-      }, 3000);
-    }
     return () => {
-      if (messageTimeoutRef.current) {
-        clearTimeout(messageTimeoutRef.current);
+      if (clearMessageTimeout.current) {
+        clearTimeout(clearMessageTimeout.current);
       }
     };
-  }, [error, isListening, hasSound]);
+  }, []);
 
   return (
     <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center',
       position: { xs: 'fixed', sm: 'relative' },
-      right: { xs: '16px', sm: 'auto' },
-      bottom: { xs: '16px', sm: 'auto' },
-      zIndex: { xs: 1000, sm: 1 }
+      right: { xs: '1rem', sm: 'auto' },
+      bottom: { xs: '1rem', sm: 'auto' },
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignItems: { xs: 'flex-end', sm: 'center' },
+      zIndex: { xs: 1100, sm: 1 }
     }}>
-      {showMessage && (
-        <Typography 
-          variant="caption" 
-          color={error ? "error" : "primary"} 
-          sx={{ 
-            position: 'fixed',
-            bottom: '88px',
-            right: '16px',
-            textAlign: 'right',
+      {(interimTranscript || error) && (
+        <Typography
+          variant="caption"
+          sx={{
+            position: 'absolute',
+            bottom: '100%',
+            right: { xs: '0', sm: '50%' },
+            transform: { xs: 'none', sm: 'translateX(50%)' },
+            marginBottom: '0.5rem',
+            color: error ? 'error.main' : (awaitingConfirmation ? 'primary.main' : 'text.secondary'),
+            fontStyle: 'italic',
             whiteSpace: 'nowrap',
-            maxWidth: 'calc(100vw - 32px)',
-            transition: 'opacity 0.3s ease',
-            '@media (min-width: 600px)': {
-              position: 'absolute',
-              bottom: '100%',
-              right: '50%',
-              transform: 'translateX(50%)',
-              textAlign: 'center',
-              mb: 1
-            }
+            textAlign: { xs: 'right', sm: 'center' },
+            backgroundColor: { xs: 'rgba(255, 255, 255, 0.9)', sm: 'transparent' }
           }}
         >
-          {error || (interimTranscript || 'Listening...')}
+          {error || interimTranscript}
         </Typography>
       )}
-      <Tooltip title={isListening ? "Stop listening" : "Start voice search"}>
-        <IconButton 
+      <Tooltip title={isListening ? 'Stop listening' : 'Start listening'}>
+        <IconButton
           onClick={toggleListening}
-          color={isListening ? "primary" : "default"}
+          color={isListening ? 'primary' : 'default'}
           sx={{
-            width: { xs: '56px', sm: '40px' },
-            height: { xs: '56px', sm: '40px' },
-            backgroundColor: { xs: 'rgba(255, 255, 255, 0.05)', sm: 'rgba(255, 255, 255, 0.8)' },
-            backdropFilter: { xs: 'blur(16px)', sm: 'blur(8px)' },
-            WebkitBackdropFilter: { xs: 'blur(16px)', sm: 'blur(8px)' },
-            border: { xs: '1px solid rgba(255, 255, 255, 0.1)', sm: 'none' },
+            bgcolor: { 
+              xs: 'rgba(255, 255, 255, 0.9)', 
+              sm: isListening ? 'rgba(25, 118, 210, 0.08)' : 'transparent' 
+            },
+            width: { xs: '3rem', sm: '2.5rem' },
+            height: { xs: '3rem', sm: '2.5rem' },
             boxShadow: { 
-              xs: '0 8px 32px rgba(0, 0, 0, 0.1)', 
+              xs: '0 0.125rem 0.5rem rgba(0, 0, 0, 0.1)', 
               sm: 'none' 
             },
             '&:hover': {
-              backgroundColor: { 
-                xs: 'rgba(255, 255, 255, 0.1)',
-                sm: 'rgba(255, 255, 255, 0.9)'
-              },
-            },
-            ...(isListening && {
-              animation: 'pulse 1.5s infinite',
-              '@keyframes pulse': {
-                '0%': {
-                  transform: 'scale(1)',
-                  boxShadow: '0 0 0 0 rgba(25, 118, 210, 0.4)',
-                },
-                '70%': {
-                  transform: 'scale(1.1)',
-                  boxShadow: '0 0 0 10px rgba(25, 118, 210, 0)',
-                },
-                '100%': {
-                  transform: 'scale(1)',
-                  boxShadow: '0 0 0 0 rgba(25, 118, 210, 0)',
-                },
-              },
-            }),
+              bgcolor: { 
+                xs: 'rgba(255, 255, 255, 1)',
+                sm: isListening ? 'rgba(25, 118, 210, 0.12)' : 'rgba(0, 0, 0, 0.04)'
+              }
+            }
           }}
         >
-          {isListening ? 
-            <MicIcon sx={{ fontSize: { xs: '24px', sm: '20px' } }} /> : 
-            <MicOffIcon sx={{ fontSize: { xs: '24px', sm: '20px' } }} />
-          }
+          {isListening ? (
+            <MicIcon sx={{ fontSize: { xs: '1.5rem', sm: '1.25rem' } }} />
+          ) : (
+            <MicOffIcon sx={{ fontSize: { xs: '1.5rem', sm: '1.25rem' } }} />
+          )}
         </IconButton>
       </Tooltip>
     </Box>

@@ -1,5 +1,3 @@
-import { Theme } from '@mui/material';
-
 export const common = {
     transitions: {
         default: 'all 0.2s ease-in-out',

@@ -15,10 +15,9 @@ import {
 import { styled, Theme, SxProps } from '@mui/material/styles';
 import { RootState } from '../store/store';
 import { setOptionChainData, setLoading, setError } from '../store/optionChainSlice';
-import { api, isMarketOpen } from '../services/api';
+import { api } from '../services/api';
 import { formatNumber } from '../utils/formatters';
 import { OptionChainData, DetailedMetrics } from '../types';
-import { getSymbolStride, calculateATMStrike } from '../constants/symbols';
 import { getOptionChainTableStyles } from '../styles/components/tableStyles';
 import { COLORS, common } from '../styles/theme/common';
 
@@ -92,8 +91,8 @@ const getStrikeCellStyle = (strike: number, atmStrike: number): SxProps<Theme> =
                 left: 0,
                 right: 0,
                 bottom: 0,
-                border: `2px solid #333`,
-                borderRadius: '4px',
+                border: `0.125rem solid #333`,
+                borderRadius: '0.25rem',
                 pointerEvents: 'none'
             },
             transition: 'all 0.2s ease-in-out',
@@ -102,7 +101,14 @@ const getStrikeCellStyle = (strike: number, atmStrike: number): SxProps<Theme> =
             }
         } as SxProps<Theme>;
     }
-    return {} as SxProps<Theme>;
+    return {
+        backgroundColor: '#E3F2FD',  
+        fontWeight: 500,
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+            backgroundColor: '#BBDEFB'  
+        }
+    } as SxProps<Theme>;
 };
 
 interface StyledTableCellProps extends React.ComponentProps<typeof TableCell> {
@@ -112,7 +118,7 @@ interface StyledTableCellProps extends React.ComponentProps<typeof TableCell> {
 const StyledTableCell = styled(TableCell, {
     shouldForwardProp: (prop) => prop !== 'theme'
 })<StyledTableCellProps>(() => ({
-    padding: '8px',
+    padding: '0.5rem',
     textAlign: 'center',
     fontSize: '0.875rem',
     '&.header-cell': {
@@ -138,67 +144,14 @@ const StyledTableCell = styled(TableCell, {
 
 const OptionChainTable: React.FC = () => {
     const dispatch = useDispatch();
-    const { selectedStock, optionChainData, loading, error, lastUpdated } = useSelector(
+    const { selectedStock, optionChainData, loading, error } = useSelector(
         (state: RootState) => state.optionChain
     );
     const tableContainerRef = React.useRef<HTMLDivElement>(null);
     const styles = getOptionChainTableStyles();
 
-    // Data fetching effect
-    React.useEffect(() => {
-        const fetchData = async () => {
-            if (!selectedStock) return;
-            
-            dispatch(setLoading(true));
-            try {
-                const response = await api.getOptionChain(selectedStock.symbol);
-                dispatch(setOptionChainData(response.optionChain));
-                dispatch(setError(null));
-            } catch (err) {
-                dispatch(setError('Failed to fetch option chain data'));
-            } finally {
-                dispatch(setLoading(false));
-            }
-        };
-
-        fetchData();
-
-        if (selectedStock && isMarketOpen()) {
-            const intervalId = setInterval(fetchData, 60000); // Refresh every minute
-            return () => clearInterval(intervalId);
-        }
-    }, [selectedStock, dispatch]);
-
-    // Scroll to ATM strike when data is loaded or stock is changed
-    React.useEffect(() => {
-        if (optionChainData?.length && metrics?.atmStrike) {
-            const atmRow = document.querySelector(`[data-strike="${metrics.atmStrike}"]`);
-            if (atmRow && tableContainerRef.current) {
-                const container = tableContainerRef.current;
-                const rowRect = atmRow.getBoundingClientRect();
-                const containerRect = container.getBoundingClientRect();
-                const scrollTop = rowRect.top - containerRect.top - (containerRect.height / 2) + (rowRect.height / 2);
-                container.scrollTo({
-                    top: container.scrollTop + scrollTop,
-                    behavior: 'smooth'
-                });
-            }
-        }
-    }, [optionChainData]);
-
-    if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>Loading...</Box>;
-    }
-
-    if (error) {
-        return <Box sx={{ color: 'error.main', p: 3 }}>{error}</Box>;
-    }
-
-    if (!optionChainData || !Array.isArray(optionChainData) || optionChainData.length === 0) {
-        return <Box sx={{ p: 3 }}>No data available</Box>;
-    }
-
-    const calculateMetrics = (): DetailedMetrics => {
+    // Calculate metrics first
+    const metrics = React.useMemo(() => {
         const defaultMetrics: DetailedMetrics = {
             timestamp: new Date().toISOString(),
             symbol: selectedStock?.symbol || '',
@@ -228,8 +181,7 @@ const OptionChainTable: React.FC = () => {
 
         try {
             const underlyingValue = optionChainData.find(item => item.underlyingValue)?.underlyingValue || 0;
-            const stride = getSymbolStride(selectedStock?.symbol || '');
-            const atmStrike = calculateATMStrike(underlyingValue, stride);
+            const atmStrike = calculateATMStrike(optionChainData, underlyingValue);
             
             const totalCallOI = optionChainData.reduce((sum, item) => sum + (item?.calls?.openInterest || 0), 0);
             const totalPutOI = optionChainData.reduce((sum, item) => sum + (item?.puts?.openInterest || 0), 0);
@@ -281,10 +233,85 @@ const OptionChainTable: React.FC = () => {
             console.error('Error calculating metrics:', error);
             return defaultMetrics;
         }
-    };
+    }, [optionChainData, selectedStock]);
 
-    const metrics = calculateMetrics();
-    const statusColor = getStatusColor(metrics.status);
+    // Data fetching effect
+    React.useEffect(() => {
+        const fetchData = async () => {
+            if (!selectedStock) return;
+            
+            dispatch(setLoading(true));
+            try {
+                const response = await api.getOptionChain(selectedStock.symbol);
+                dispatch(setOptionChainData(response.optionChain));
+                dispatch(setError(null));
+            } catch (err) {
+                dispatch(setError('Failed to fetch option chain data'));
+            } finally {
+                dispatch(setLoading(false));
+            }
+        };
+
+        fetchData();
+
+        let intervalId: NodeJS.Timeout | null = null;
+        if (selectedStock && api.isMarketOpen()) {
+            intervalId = setInterval(fetchData, 60000); // Refresh every minute
+        }
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [selectedStock, dispatch]);
+
+    // Scroll to ATM strike when data is loaded or stock is changed
+    React.useEffect(() => {
+        if (optionChainData?.length && metrics?.atmStrike) {
+            const atmRow = document.querySelector(`[data-strike="${metrics.atmStrike}"]`);
+            if (atmRow && tableContainerRef.current) {
+                const container = tableContainerRef.current;
+                const rowRect = atmRow.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                const scrollTop = rowRect.top - containerRect.top - (containerRect.height / 2) + (rowRect.height / 2);
+                container.scrollTo({
+                    top: container.scrollTop + scrollTop,
+                    behavior: 'smooth'
+                });
+            }
+        }
+    }, [optionChainData, metrics?.atmStrike]);
+
+    if (loading) {
+        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>Loading...</Box>;
+    }
+
+    if (error) {
+        return <Box sx={{ color: 'error.main', p: 3 }}>{error}</Box>;
+    }
+
+    if (!optionChainData || !Array.isArray(optionChainData) || optionChainData.length === 0) {
+        return <Box sx={{ p: 3 }}>No data available</Box>;
+    }
+
+    // Calculate ATM strike based on closest strike price to spot price
+    const calculateATMStrike = (optionData: OptionChainData[], spotPrice: number): number => {
+        if (!optionData || optionData.length === 0) return 0;
+        
+        const strikes = optionData.map(item => item.strikePrice).sort((a, b) => a - b);
+        let closestStrike = strikes[0];
+        let minDiff = Math.abs(strikes[0] - spotPrice);
+
+        // Find the strike price closest to spot price
+        for (const strike of strikes) {
+            const diff = Math.abs(strike - spotPrice);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestStrike = strike;
+            }
+        }
+        
+        return closestStrike;
+    };
 
     if (!selectedStock) return null;
 
@@ -373,7 +400,7 @@ const OptionChainTable: React.FC = () => {
                 component={Paper} 
                 sx={{
                     mb: 4,
-                    maxHeight: 'calc(100vh - 400px)',
+                    maxHeight: 'calc(100dvh - 25rem)',
                     overflow: 'auto',
                     position: 'relative',
                     '& .MuiTable-root': {
@@ -390,16 +417,16 @@ const OptionChainTable: React.FC = () => {
                         backgroundColor: 'inherit',
                     },
                     '&::-webkit-scrollbar': {
-                        width: '8px',
-                        height: '8px',
+                        width: '0.5rem',
+                        height: '0.5rem',
                     },
                     '&::-webkit-scrollbar-track': {
                         background: '#f1f1f1',
-                        borderRadius: '4px',
+                        borderRadius: '0.25rem',
                     },
                     '&::-webkit-scrollbar-thumb': {
                         background: '#888',
-                        borderRadius: '4px',
+                        borderRadius: '0.25rem',
                         '&:hover': {
                             background: '#666',
                         },

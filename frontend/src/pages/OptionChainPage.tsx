@@ -1,21 +1,13 @@
-import React, { Suspense, lazy } from 'react';
-import { Box, useTheme, useMediaQuery, Typography, CircularProgress } from '@mui/material';
+import React from 'react';
+import { Box, useTheme, useMediaQuery, Typography, Paper } from '@mui/material';
 import StockSelector from '../components/StockSelector';
+import DetailedMetrics from '../components/DetailedMetrics';
+import OptionChainTable from '../components/OptionChainTable';
+import NoStockMessage from '../components/NoStockMessage';
 import { common } from '../styles/theme/common';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store/store';
 import { setSelectedStock } from '../store/optionChainSlice';
-
-// Lazy load components
-const DetailedMetrics = lazy(() => import('../components/DetailedMetrics'));
-const OptionChainTable = lazy(() => import('../components/OptionChainTable'));
-const ChartSection = lazy(() => import('../components/ChartSection'));
-
-const LoadingFallback = () => (
-  <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-    <CircularProgress />
-  </Box>
-);
 
 const OptionChainPage: React.FC = () => {
   const theme = useTheme();
@@ -32,20 +24,23 @@ const OptionChainPage: React.FC = () => {
       component="main"
       sx={{
         ...common.layout.mainContent,
-        ...common.spacing.page,
+        p: 2,
       }}
     >
-      <Box sx={{
-        ...common.layout.card,
-        borderRadius: common.borderRadius.large,
-        boxShadow: common.shadows.card,
-        minHeight: `calc(100vh - ${theme.spacing(isMobile ? 4 : 6)})`,
-        maxWidth: common.layout.maxWidth,
-        transition: common.transitions.default,
-        '&:hover': {
-          boxShadow: common.shadows.cardHover,
-        }
-      }}>
+      <Paper
+        elevation={0}
+        sx={{
+          ...common.layout.card,
+          borderRadius: common.borderRadius.large,
+          boxShadow: common.shadows.card,
+          minHeight: `calc(100dvh - ${theme.spacing(isMobile ? 4 : 6)})`,
+          maxWidth: common.layout.maxWidth,
+          transition: common.transitions.default,
+          '&:hover': {
+            boxShadow: common.shadows.cardHover,
+          }
+        }}
+      >
         <Box
           sx={{
             ...common.spacing.content,
@@ -61,61 +56,55 @@ const OptionChainPage: React.FC = () => {
             gap: 3,
             flexWrap: { xs: 'wrap', sm: 'nowrap' }
           }}>
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                fontWeight: 600,
-                color: '#000000',
-                whiteSpace: 'nowrap',
-                letterSpacing: '0.01em',
-                textTransform: 'uppercase',
-                minWidth: 'fit-content'
-              }}
-            >
-              Option Chain
-            </Typography>
-            <StockSelector 
-              onSelect={handleStockSelect}
-              selectedSymbol={selectedStock?.symbol || null}
-            />
-          </Box>
-          {selectedStock ? (
-            <Suspense fallback={<LoadingFallback />}>
-              <Box sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2
-              }}>
-                <Box sx={{ width: '100%' }}>
-                  <DetailedMetrics />
-                </Box>
-                <Box sx={{ width: '100%' }}>
-                  <OptionChainTable />
-                </Box>
-                <Box sx={{ width: '100%' }}>
-                  <ChartSection />
-                </Box>
-              </Box>
-            </Suspense>
-          ) : (
             <Box 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center',
-                minHeight: '200px',
-                color: 'text.secondary',
-                textAlign: 'center',
-                p: 3
+              className="css-1xz3dvu"
+              sx={{
+                display: 'flex',
+                flexDirection: 'column'
               }}
             >
-              <Typography variant="h6">
-                Please select a stock to view
+              <Typography 
+                variant="subtitle1"
+                className="css-1blsivr-MuiTypography-root"
+                sx={{
+                  fontWeight: 'medium',
+                  color: theme.palette.text.secondary
+                }}
+              >
+                Option Chain
               </Typography>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 3,
+                flexWrap: { xs: 'wrap', sm: 'nowrap' }
+              }}>
+                <StockSelector 
+                  onSelect={handleStockSelect}
+                  selectedSymbol={selectedStock?.symbol || null}
+                />
+              </Box>
             </Box>
+          </Box>
+          
+          {selectedStock ? (
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2
+            }}>
+              <Box sx={{ width: '100%' }}>
+                <DetailedMetrics />
+              </Box>
+              <Box sx={{ width: '100%' }}>
+                <OptionChainTable />
+              </Box>
+            </Box>
+          ) : (
+            <NoStockMessage />
           )}
         </Box>
-      </Box>
+      </Paper>
     </Box>
   );
 };
