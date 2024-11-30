@@ -16,11 +16,27 @@ app.use(express.json());
 
 // Headers required by NSE
 const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Accept-Language': 'en-US,en;q=0.9',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Cache-Control': 'no-cache',
+  'Connection': 'keep-alive',
+  'Pragma': 'no-cache',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'none',
+  'Sec-Fetch-User': '?1',
+  'Upgrade-Insecure-Requests': '1',
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': '"macOS"'
 };
+
+// Configure axios defaults
+axios.defaults.timeout = 30000; // 30 seconds
+axios.defaults.headers.common = headers;
+axios.defaults.proxy = false;
 
 let cookies = '';
 
@@ -39,14 +55,41 @@ const formatTimestamp = () => {
 };
 
 // Initialize cookies
-async function initializeCookies() {
+const initializeCookies = async (retryCount = 3, delay = 5000) => {
+  for (let attempt = 1; attempt <= retryCount; attempt++) {
     try {
-        const response = await axios.get('https://www.nseindia.com', { headers });
-        cookies = response.headers['set-cookie'].join(';');
+      console.log(`Attempt ${attempt} to initialize cookies...`);
+      
+      const response = await axios.get('https://www.nseindia.com', {
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'sec-ch-ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"macOS"'
+        },
+        timeout: 10000 // 10 second timeout
+      });
+
+      const cookies = response.headers['set-cookie'];
+      if (cookies) {
+        console.log('Successfully initialized cookies');
+        return cookies;
+      }
     } catch (error) {
-        console.error('Error initializing cookies:', error);
+      console.error(`Attempt ${attempt} failed:`, error.message);
+      if (attempt === retryCount) {
+        console.error('All retry attempts failed. Starting server without cookies.');
+        return null;
+      }
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
-}
+  }
+  return null;
+};
 
 // Initialize favorites file if it doesn't exist
 const initFavoritesFile = async () => {
@@ -201,8 +244,8 @@ async function getLastNSEUpdate(symbol) {
         // First get the cookies from main NSE page
         const cookieResponse = await axios.get('https://www.nseindia.com', {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Accept-Encoding': 'gzip, deflate, br'
             }
@@ -217,7 +260,7 @@ async function getLastNSEUpdate(symbol) {
         // Now make the actual API request with cookies
         const response = await axios.get(`https://www.nseindia.com/api/option-chain-${symbol.toLowerCase() === 'nifty' ? 'indices' : 'equities'}?symbol=${symbol}`, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'application/json, text/plain, */*',
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Accept-Encoding': 'gzip, deflate, br',
@@ -557,11 +600,29 @@ async function initializeDirectories() {
 }
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, '0.0.0.0', () => {});
+
+const startServer = async () => {
+  try {
+    const cookies = await initializeCookies();
+    if (cookies) {
+      console.log('Server initialized with cookies');
+    } else {
+      console.log('Server starting without cookies - some features may be limited');
+    }
+    
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Error starting server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 // Initialize directories and files on server start
 initializeDirectories();
-initializeCookies();
 initFavoritesFile();
 
 // Start background tasks with optimized intervals
