@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { OptionChainData} from '../types';
 import { 
     AVAILABLE_SYMBOLS, 
@@ -41,6 +41,43 @@ interface DetailedMetrics {
     status: 'strong-bullish' | 'bullish' | 'bearish' | 'strong-bearish';
 }
 
+// Create secure axios instance with default headers
+const secureAxios: AxiosInstance = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'X-XSS-Protection': '1; mode=block',
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+    },
+    withCredentials: true, // Enable if using cookies
+    timeout: 10000, // 10 second timeout
+});
+
+// Add request interceptor for dynamic headers
+secureAxios.interceptors.request.use((config) => {
+    // Add timestamp to prevent caching
+    config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    config.headers['Pragma'] = 'no-cache';
+    config.headers['Expires'] = '0';
+    
+    return config;
+});
+
+// Add response interceptor for error handling
+secureAxios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response) {
+            console.error('API Error:', error.response.status, error.response.data);
+        }
+        return Promise.reject(error);
+    }
+);
+
 const getStocks = async (): Promise<{ indices: string[], equities: string[] }> => {
     // Return separate lists for indices and equities
     return {
@@ -52,7 +89,7 @@ const getStocks = async (): Promise<{ indices: string[], equities: string[] }> =
 const getOptionChain = async (symbol: string): Promise<{ optionChain: OptionChainData[], metrics: DetailedMetrics }> => {
     try {
         const type = getSymbolType(symbol);
-        const response = await axios.get(`${PROXY_URL}/option-chain/${type}/${symbol}`);
+        const response = await secureAxios.get(`/option-chain/${type}/${symbol}`);
         
         if (!response.data?.filtered?.data) {
             throw new Error('Invalid data format received from NSE');
@@ -219,17 +256,17 @@ const isMarketOpen = (): boolean => {
 };
 
 const getFavorites = async (): Promise<string[]> => {
-    const response = await axios.get(`${API_BASE_URL}/favorites`);
+    const response = await secureAxios.get('/favorites');
     return response.data;
 };
 
 const addFavorite = async (symbol: string): Promise<string[]> => {
-    const response = await axios.post(`${API_BASE_URL}/favorites`, { symbol });
+    const response = await secureAxios.post('/favorites', { symbol });
     return response.data.favSymbols;
 };
 
 const removeFavorite = async (symbol: string): Promise<string[]> => {
-    const response = await axios.delete(`${API_BASE_URL}/favorites/${symbol}`);
+    const response = await secureAxios.delete(`/favorites/${symbol}`);
     return response.data.favSymbols;
 };
 

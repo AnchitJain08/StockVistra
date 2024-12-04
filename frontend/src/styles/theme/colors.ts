@@ -1,5 +1,3 @@
-import { alpha } from '@mui/material/styles';
-
 export const colors = {
     metrics: {
         background: 'linear-gradient(90deg, hsla(18, 76%, 88%, 0.9) 0%, hsla(203, 69%, 88%, 0.9) 100%)',

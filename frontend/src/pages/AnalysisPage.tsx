@@ -11,6 +11,7 @@ import { getSymbolConfig } from '../constants/symbols';
 import { common } from '../styles/theme/common';
 import { api } from '../services/api';
 import { RootState } from '../store/store';
+import { TimeRange } from '../components/BaseChart';
 
 interface SymbolData {
   timeStamp: string;
@@ -34,7 +35,7 @@ const AnalysisPage = () => {
   const selectedStock = useSelector((state: RootState) => state.optionChain.selectedStock);
   const [favSymbols, setFavSymbols] = useState<string[]>([]);
   const [symbolData, setSymbolData] = useState<SymbolData[]>([]);
-  const [timeRange, setTimeRange] = useState<string>('1H');
+  const [timeRange, setTimeRange] = useState<TimeRange>('1H');
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -167,7 +168,7 @@ const AnalysisPage = () => {
                   }
                 }}
                 selectedSymbol={selectedStock?.symbol || null}
-                hideMic={true}
+                filterSymbols={favSymbols}
               />
             </Box>
           </Box>

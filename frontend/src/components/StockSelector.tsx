@@ -32,10 +32,10 @@ const StockSelector: React.FC<StockSelectorProps> = ({ onSelect, selectedSymbol,
             try {
                 const { indices: indicesData, equities: equitiesData } = await api.getStocks();
                 // Filter the stocks if filterSymbols is provided
-                const filteredIndices = filterSymbols 
+                const filteredIndices = filterSymbols?.length 
                     ? indicesData?.filter(symbol => filterSymbols.includes(symbol)) 
                     : indicesData;
-                const filteredEquities = filterSymbols 
+                const filteredEquities = filterSymbols?.length 
                     ? equitiesData?.filter(symbol => filterSymbols.includes(symbol)) 
                     : equitiesData;
                     
@@ -48,10 +48,10 @@ const StockSelector: React.FC<StockSelectorProps> = ({ onSelect, selectedSymbol,
                 const allEquities = Object.keys(AVAILABLE_SYMBOLS.equities);
                 
                 // Filter the stocks if filterSymbols is provided
-                const filteredIndices = filterSymbols 
+                const filteredIndices = filterSymbols?.length 
                     ? allIndices.filter(symbol => filterSymbols.includes(symbol)) 
                     : allIndices;
-                const filteredEquities = filterSymbols 
+                const filteredEquities = filterSymbols?.length 
                     ? allEquities.filter(symbol => filterSymbols.includes(symbol)) 
                     : allEquities;
                 

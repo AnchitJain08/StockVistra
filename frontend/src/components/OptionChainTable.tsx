@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     Table,
@@ -17,7 +17,7 @@ import { RootState } from '../store/store';
 import { setOptionChainData, setLoading, setError } from '../store/optionChainSlice';
 import { api } from '../services/api';
 import { formatNumber } from '../utils/formatters';
-import { OptionChainData, DetailedMetrics } from '../types';
+import { DetailedMetrics } from '../types';
 import { getOptionChainTableStyles } from '../styles/components/tableStyles';
 import { COLORS, common } from '../styles/theme/common';
 
@@ -56,6 +56,15 @@ const getStatusColor = (status: string) => {
 
 const getRowStyle = (strike: number, atmStrike: number): SxProps<Theme> => {
     const styles = getOptionChainTableStyles();
+    if (strike === atmStrike) {
+        return {
+            backgroundColor: '#F7F7F7',
+            '& td': {
+                ...styles.row.atm,
+                fontWeight: 600
+            }
+        } as SxProps<Theme>;
+    }
     if (strike < atmStrike) {
         return {
             '& td:nth-of-type(-n+6)': {
@@ -63,16 +72,9 @@ const getRowStyle = (strike: number, atmStrike: number): SxProps<Theme> => {
             }
         } as SxProps<Theme>;
     }
-    if (strike > atmStrike) {
-        return {
-            '& td:nth-of-type(n+8)': {
-                ...styles.row.putAboveATM
-            }
-        } as SxProps<Theme>;
-    }
     return {
-        '& td': {
-            ...styles.row.atm
+        '& td:nth-of-type(n+8)': {
+            ...styles.row.putAboveATM
         }
     } as SxProps<Theme>;
 };
@@ -149,114 +151,153 @@ const OptionChainTable: React.FC = () => {
     );
     const tableContainerRef = React.useRef<HTMLDivElement>(null);
     const styles = getOptionChainTableStyles();
-
-    // Calculate metrics first
-    const metrics = React.useMemo(() => {
-        const defaultMetrics: DetailedMetrics = {
-            timestamp: new Date().toISOString(),
-            symbol: selectedStock?.symbol || '',
-            expiryDate: '',
-            spotPrice: 0,
-            totalCallOI: 0,
-            totalPutOI: 0,
-            maxCallOI: 0,
-            maxPutOI: 0,
-            maxCallOIStrike: 0,
-            maxPutOIStrike: 0,
-            maxCallChangeOI: 0,
-            maxPutChangeOI: 0,
-            maxCallChangeOIStrike: 0,
-            maxPutChangeOIStrike: 0,
-            atmStrike: 0,
-            atmCallOI: 0,
-            atmPutOI: 0,
-            pcr: 0,
-            changePCR: 0,
-            status: 'bearish'
-        };
-
-        if (!Array.isArray(optionChainData) || optionChainData.length === 0) {
-            return defaultMetrics;
-        }
-
-        try {
-            const underlyingValue = optionChainData.find(item => item.underlyingValue)?.underlyingValue || 0;
-            const atmStrike = calculateATMStrike(optionChainData, underlyingValue);
-            
-            const totalCallOI = optionChainData.reduce((sum, item) => sum + (item?.calls?.openInterest || 0), 0);
-            const totalPutOI = optionChainData.reduce((sum, item) => sum + (item?.puts?.openInterest || 0), 0);
-            const pcRatio = totalCallOI === 0 ? 0 : totalPutOI / totalCallOI;
-
-            const atmItem = optionChainData.find(item => item.strikePrice === atmStrike);
-            const maxCallOIItem = optionChainData.reduce((max, item) => 
-                (item?.calls?.openInterest || 0) > (max?.calls?.openInterest || 0) ? item : max, 
-                optionChainData[0]
-            );
-            const maxPutOIItem = optionChainData.reduce((max, item) => 
-                (item?.puts?.openInterest || 0) > (max?.puts?.openInterest || 0) ? item : max, 
-                optionChainData[0]
-            );
-            const maxCallChangeOIItem = optionChainData.reduce((max, item) => 
-                (item?.calls?.changeinOpenInterest || 0) > (max?.calls?.changeinOpenInterest || 0) ? item : max, 
-                optionChainData[0]
-            );
-            const maxPutChangeOIItem = optionChainData.reduce((max, item) => 
-                (item?.puts?.changeinOpenInterest || 0) > (max?.puts?.changeinOpenInterest || 0) ? item : max, 
-                optionChainData[0]
-            );
-
-            return {
-                ...defaultMetrics,
-                expiryDate: optionChainData[0]?.expiryDate || '',
-                spotPrice: underlyingValue,
-                totalCallOI,
-                totalPutOI,
-                maxCallOI: maxCallOIItem?.calls?.openInterest || 0,
-                maxPutOI: maxPutOIItem?.puts?.openInterest || 0,
-                maxCallOIStrike: maxCallOIItem?.strikePrice || 0,
-                maxPutOIStrike: maxPutOIItem?.strikePrice || 0,
-                maxCallChangeOI: maxCallChangeOIItem?.calls?.changeinOpenInterest || 0,
-                maxPutChangeOI: maxPutChangeOIItem?.puts?.changeinOpenInterest || 0,
-                maxCallChangeOIStrike: maxCallChangeOIItem?.strikePrice || 0,
-                maxPutChangeOIStrike: maxPutChangeOIItem?.strikePrice || 0,
-                atmStrike,
-                atmCallOI: atmItem?.calls?.openInterest || 0,
-                atmPutOI: atmItem?.puts?.openInterest || 0,
-                pcr: pcRatio,
-                changePCR: atmItem ? (atmItem.puts?.openInterest || 0) / (atmItem.calls?.openInterest || 1) : 0,
-                status: pcRatio >= 1.5 ? 'strong-bullish' : 
-                        pcRatio >= 1.0 ? 'bullish' : 
-                        pcRatio >= 0.5 ? 'bearish' : 
-                        'strong-bearish'
-            };
-        } catch (error) {
-            console.error('Error calculating metrics:', error);
-            return defaultMetrics;
-        }
-    }, [optionChainData, selectedStock]);
+    const [metrics, setMetrics] = useState<DetailedMetrics>({
+        timestamp: new Date().toISOString(),
+        symbol: '',
+        expiryDate: '',
+        spotPrice: 0,
+        totalCallOI: 0,
+        totalPutOI: 0,
+        maxCallOI: 0,
+        maxPutOI: 0,
+        maxCallOIStrike: 0,
+        maxPutOIStrike: 0,
+        maxCallChangeOI: 0,
+        maxPutChangeOI: 0,
+        maxCallChangeOIStrike: 0,
+        maxPutChangeOIStrike: 0,
+        atmStrike: 0,
+        atmCallOI: 0,
+        atmPutOI: 0,
+        pcr: 0,
+        changePCR: 0,
+        status: 'bearish'
+    });
 
     // Data fetching effect
     React.useEffect(() => {
-        const fetchData = async () => {
-            if (!selectedStock) return;
+        const fetchOptionChainData = async () => {
+            if (!selectedStock?.symbol) {
+                console.log('No stock selected');
+                return;
+            }
             
+            console.log('Fetching data for:', selectedStock.symbol);
             dispatch(setLoading(true));
             try {
                 const response = await api.getOptionChain(selectedStock.symbol);
-                dispatch(setOptionChainData(response.optionChain));
+                console.log('API Response:', response);
+                const optionChainData = response.optionChain;
+                
+                let totalCallOI = 0;
+                let totalPutOI = 0;
+                let maxCallOI = 0;
+                let maxPutOI = 0;
+                let maxCallOIStrike = 0;
+                let maxPutOIStrike = 0;
+                let maxCallChangeOI = 0;
+                let maxPutChangeOI = 0;
+                let maxCallChangeOIStrike = 0;
+                let maxPutChangeOIStrike = 0;
+                let spotPrice = optionChainData[0]?.underlyingValue || 0;
+                let expiryDate = optionChainData[0]?.expiryDate || '';
+                
+                const atmStrike = optionChainData.reduce((closest, current) => {
+                    return Math.abs(current.strikePrice - spotPrice) < Math.abs(closest - spotPrice) 
+                        ? current.strikePrice 
+                        : closest;
+                }, optionChainData[0]?.strikePrice || 0);
+                
+                let atmCallOI = 0;
+                let atmPutOI = 0;
+
+                optionChainData.forEach(item => {
+                    totalCallOI += item.calls?.openInterest || 0;
+                    totalPutOI += item.puts?.openInterest || 0;
+                    
+                    const callOI = item.calls?.openInterest || 0;
+                    const putOI = item.puts?.openInterest || 0;
+                    const callChangeOI = item.calls?.changeinOpenInterest || 0;
+                    const putChangeOI = item.puts?.changeinOpenInterest || 0;
+                    
+                    if (callOI > maxCallOI) {
+                        maxCallOI = callOI;
+                        maxCallOIStrike = item.strikePrice;
+                    }
+                    if (putOI > maxPutOI) {
+                        maxPutOI = putOI;
+                        maxPutOIStrike = item.strikePrice;
+                    }
+                    if (callChangeOI > maxCallChangeOI) {
+                        maxCallChangeOI = callChangeOI;
+                        maxCallChangeOIStrike = item.strikePrice;
+                    }
+                    if (putChangeOI > maxPutChangeOI) {
+                        maxPutChangeOI = putChangeOI;
+                        maxPutChangeOIStrike = item.strikePrice;
+                    }
+                    
+                    if (item.strikePrice === atmStrike) {
+                        atmCallOI = callOI;
+                        atmPutOI = putOI;
+                    }
+                });
+                
+                const pcr = totalCallOI === 0 ? 0 : totalPutOI / totalCallOI;
+                const changePCR = atmCallOI === 0 ? 0 : atmPutOI / atmCallOI;
+                let status: DetailedMetrics['status'] = 'bearish';
+                if (pcr > 1.5) {
+                    status = 'strong-bullish';
+                } else if (pcr > 1) {
+                    status = 'bullish';
+                } else if (pcr < 0.5) {
+                    status = 'strong-bearish';
+                } else if (pcr < 1) {
+                    status = 'bearish';
+                }
+
+                // Store option chain data in Redux
+                dispatch(setOptionChainData(optionChainData));
+
+                // Update metrics state
+                setMetrics({
+                    timestamp: new Date().toISOString(),
+                    symbol: selectedStock.symbol,
+                    expiryDate,
+                    spotPrice,
+                    totalCallOI,
+                    totalPutOI,
+                    maxCallOI,
+                    maxPutOI,
+                    maxCallOIStrike,
+                    maxPutOIStrike,
+                    maxCallChangeOI,
+                    maxPutChangeOI,
+                    maxCallChangeOIStrike,
+                    maxPutChangeOIStrike,
+                    atmStrike,
+                    atmCallOI,
+                    atmPutOI,
+                    pcr,
+                    changePCR,
+                    status
+                });
+
                 dispatch(setError(null));
             } catch (err) {
+                console.error('Error fetching data:', err);
                 dispatch(setError('Failed to fetch option chain data'));
             } finally {
                 dispatch(setLoading(false));
             }
         };
 
-        fetchData();
+        fetchOptionChainData();
 
+        // Set up interval for auto-refresh if market is open
         let intervalId: NodeJS.Timeout | null = null;
         if (selectedStock && api.isMarketOpen()) {
-            intervalId = setInterval(fetchData, 60000); // Refresh every minute
+            intervalId = setInterval(fetchOptionChainData, 60000); // Refresh every minute
         }
 
         return () => {
@@ -292,26 +333,6 @@ const OptionChainTable: React.FC = () => {
     if (!optionChainData || !Array.isArray(optionChainData) || optionChainData.length === 0) {
         return <Box sx={{ p: 3 }}>No data available</Box>;
     }
-
-    // Calculate ATM strike based on closest strike price to spot price
-    const calculateATMStrike = (optionData: OptionChainData[], spotPrice: number): number => {
-        if (!optionData || optionData.length === 0) return 0;
-        
-        const strikes = optionData.map(item => item.strikePrice).sort((a, b) => a - b);
-        let closestStrike = strikes[0];
-        let minDiff = Math.abs(strikes[0] - spotPrice);
-
-        // Find the strike price closest to spot price
-        for (const strike of strikes) {
-            const diff = Math.abs(strike - spotPrice);
-            if (diff < minDiff) {
-                minDiff = diff;
-                closestStrike = strike;
-            }
-        }
-        
-        return closestStrike;
-    };
 
     if (!selectedStock) return null;
 

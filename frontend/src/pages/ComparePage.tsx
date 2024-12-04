@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  useTheme, 
-  useMediaQuery, 
-  Typography, 
-  Paper, 
-  Table,
-  TableBody,
-  TableCell,
+import {
+  Box,
+  Typography,
   TableContainer,
+  Table,
+  TableHead,
+  TableBody,
   TableRow,
-  styled,
-  TableHead
+  TableCell,
+  styled
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useDispatch, useSelector } from 'react-redux';
 import StockSelector from '../components/StockSelector';
 import CompareChart from '../components/CompareChart';
@@ -20,10 +18,10 @@ import NoStockMessage from '../components/NoStockMessage';
 import { setSelectedStock } from '../store/optionChainSlice';
 import { getSymbolConfig } from '../constants/symbols';
 import { Stock } from '../types';
-import { common } from '../styles/theme/common';
 import { api } from '../services/api';
 import { RootState } from '../store/store';
 import { colors } from '../styles/theme/colors';
+import { TimeRange } from '../components/BaseChart';
 
 const PROXY_URL = `http://${window.location.hostname}:4000/api`;
 
@@ -66,25 +64,22 @@ interface MetricRow {
 
 // Styled components
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  borderRadius: '16px',
-  boxShadow: '0 4px 20px 0 rgba(0,0,0,0.1)',
   marginTop: theme.spacing(2),
-  overflowX: 'auto',
-  '& .MuiTableCell-root': {
-    borderBottom: '1px solid rgba(224, 224, 224, 0.4)',
-    padding: theme.spacing(2),
+  overflow: 'hidden',
+  borderRadius: '16px 16px 0 0',
+  '& .MuiTableCell-head': {
+    fontWeight: 'bold',
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.primary.contrastText,
+    '&:first-of-type': {
+      borderTopLeftRadius: '16px',
+    },
+    '&:last-child': {
+      borderTopRightRadius: '16px',
+    },
   },
-  '& .MuiTableRow-root:last-child .MuiTableCell-root': {
-    borderBottom: 'none',
-  },
-  '& .MuiTableHead-root': {
-    '& .MuiTableRow-root': {
-      backgroundColor: '#0A2F57',
-      '& .MuiTableCell-root': {
-        color: '#fff',
-        fontWeight: 'bold'
-      }
-    }
+  '& .MuiTableCell-body': {
+    fontSize: '0.875rem',
   }
 }));
 
@@ -104,7 +99,6 @@ const ValueCell = styled(TableCell)(({ theme }) => ({
 
 const ComparePage: React.FC = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const dispatch = useDispatch();
   const selectedStock = useSelector((state: RootState) => state.optionChain.selectedStock);
   const [selectedStock2, setSelectedStock2] = useState<Stock | null>(null);
@@ -124,7 +118,7 @@ const ComparePage: React.FC = () => {
   const [historicalData1, setHistoricalData1] = useState<any[]>([]);
   const [historicalData2, setHistoricalData2] = useState<any[]>([]);
   const [historicalData3, setHistoricalData3] = useState<any[]>([]);
-  const [timeRange, setTimeRange] = useState('15M');
+  const [timeRange, setTimeRange] = useState<TimeRange>('1H');
   const [favSymbols, setFavSymbols] = useState<string[]>([]);
 
   useEffect(() => {
@@ -319,45 +313,54 @@ const ComparePage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchSymbolData = async (symbol: string | undefined, setData: React.Dispatch<React.SetStateAction<any[]>>) => {
-      if (!symbol) {
-        setData([]);
-        return;
-      }
+  const fetchSymbolData = async (symbol: string | undefined, setData: React.Dispatch<React.SetStateAction<any[]>>) => {
+    if (!symbol) {
+      setData([]);
+      return;
+    }
 
-      try {
-        const response = await fetch(`${PROXY_URL}/symbol-data/${symbol}`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch symbol data: ${response.statusText}`);
-        }
-        const data = await response.json();
-        
-        if (Array.isArray(data) && data.length > 0) {
-          const formattedData = data.map(item => ({
-            timeStamp: item.timeStamp,
-            PCR: item.PCR
-          }));
-          setData(formattedData);
-        } else if (data && typeof data === 'object') {
-          const formattedData = [{
-            timeStamp: data.timeStamp,
-            PCR: data.PCR
-          }];
-          setData(formattedData);
-        } else {
-          setData([]);
-        }
-      } catch (error) {
-        console.error('Error fetching symbol data:', error);
+    try {
+      const response = await fetch(`${PROXY_URL}/symbol-data/${symbol}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch symbol data: ${response.statusText}`);
+      }
+      const data = await response.json();
+      
+      if (Array.isArray(data) && data.length > 0) {
+        const formattedData = data.map(item => ({
+          timeStamp: item.timeStamp,
+          PCR: parseFloat(item.PCR).toFixed(2)
+        })).reverse(); // Reverse to match Analysis page order (newest first)
+        setData(formattedData);
+      } else if (data && typeof data === 'object') {
+        const formattedData = [{
+          timeStamp: data.timeStamp,
+          PCR: parseFloat(data.PCR).toFixed(2)
+        }];
+        setData(formattedData);
+      } else {
         setData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching symbol data:', error);
+      setData([]);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (selectedStock?.symbol) {
+        await fetchSymbolData(selectedStock.symbol, setHistoricalData1);
+      }
+      if (selectedStock2?.symbol) {
+        await fetchSymbolData(selectedStock2.symbol, setHistoricalData2);
+      }
+      if (selectedStock3?.symbol) {
+        await fetchSymbolData(selectedStock3.symbol, setHistoricalData3);
       }
     };
 
-    // Fetch data for both symbols
-    fetchSymbolData(selectedStock?.symbol, setHistoricalData1);
-    fetchSymbolData(selectedStock2?.symbol, setHistoricalData2);
-    fetchSymbolData(selectedStock3?.symbol, setHistoricalData3);
+    fetchData();
 
     // Set up real-time updates
     const handleRefresh = (event: CustomEvent) => {
@@ -509,230 +512,156 @@ const ComparePage: React.FC = () => {
   }, [selectedStock, selectedStock2, selectedStock3]);
 
   return (
-    <Box
-      component="main"
-      sx={{
-        ...common.layout.mainContent,
-        p: 2,
-      }}
-    >
-      <Paper
-        elevation={0}
-        sx={{
-          ...common.layout.card,
-          borderRadius: common.borderRadius.large,
-          boxShadow: common.shadows.card,
-          minHeight: `calc(100dvh - ${theme.spacing(isMobile ? 4 : 6)})`,
-          maxWidth: common.layout.maxWidth,
-          transition: common.transitions.default,
-          '&:hover': {
-            boxShadow: common.shadows.cardHover,
-          }
-        }}
-      >
-        <Box
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' }, 
+        gap: 2
+      }}>
+        <Box 
+          className="css-1xz3dvu"
           sx={{
-            ...common.spacing.content,
-            flex: 1,
-            '& > *:not(:last-child)': {
-              mb: 2
-            }
+            display: 'flex',
+            flexDirection: 'column',
+            width: '396px'
           }}
         >
-          <Box sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: { xs: 2, md: 3 },
-            my: 3,
-            px: 2.5,
-            justifyContent: 'center',
-            alignItems: 'flex-start',
-            width: '100%'
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            height: 32,
+            mb: 0.5
           }}>
-            {/* Stock 1 */}
-            <Box 
-              className="css-1xz3dvu"
+            <Typography 
+              variant="subtitle1" 
+              className="css-1blsivr-MuiTypography-root"
               sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                width: '396px',
-                pl: 3
+                fontWeight: 600,
+                color: theme.palette.text.primary,
+                fontSize: '0.9375rem'
               }}
             >
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                height: 32,
-                mb: 1
-              }}>
-                <Typography 
-                  variant="subtitle1" 
-                  className="css-1blsivr-MuiTypography-root"
-                  sx={{
-                    fontWeight: 600,
-                    color: theme.palette.text.primary,
-                    fontSize: '0.9375rem'
-                  }}
-                >
-                  Stock 1
-                </Typography>
-              </Box>
-              <Box className="css-raoz7y" sx={{ width: '100% !important', p: '0 !important' }}>
-                <StockSelector
-                  onSelect={handleStockSelect}
-                  selectedSymbol={selectedStock?.symbol || null}
-                  hideMic={true}
-                />
-              </Box>
-            </Box>
-
-            {/* Stock 2 */}
-            <Box 
-              className="css-1xz3dvu"
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                width: '396px',
-                pl: 3
-              }}
-            >
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                height: 32,
-                mb: 1
-              }}>
-                <Typography 
-                  variant="subtitle1"
-                  className="css-1blsivr-MuiTypography-root"
-                  sx={{
-                    fontWeight: 600,
-                    color: theme.palette.text.primary,
-                    fontSize: '0.9375rem'
-                  }}
-                >
-                  Stock 2
-                </Typography>
-              </Box>
-              <Box className="css-raoz7y" sx={{ width: '100% !important', p: '0 !important' }}>
-                <StockSelector
-                  onSelect={handleStock2Select}
-                  selectedSymbol={selectedStock2?.symbol || null}
-                  hideMic={true}
-                />
-              </Box>
-            </Box>
-
-            {/* Stock 3 */}
-            <Box 
-              className="css-1xz3dvu"
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                width: '396px',
-                pl: 3,
-                pr: 3
-              }}
-            >
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                height: 32,
-                mb: 1
-              }}>
-                <Typography 
-                  variant="subtitle1"
-                  className="css-1blsivr-MuiTypography-root"
-                  sx={{
-                    fontWeight: 600,
-                    color: theme.palette.text.primary,
-                    fontSize: '0.9375rem'
-                  }}
-                >
-                  Stock 3
-                </Typography>
-              </Box>
-              <Box className="css-raoz7y" sx={{ width: '100% !important', p: '0 !important' }}>
-                <StockSelector
-                  onSelect={handleStock3Select}
-                  selectedSymbol={selectedStock3?.symbol || null}
-                  hideMic={true}
-                />
-              </Box>
-            </Box>
+              Stock 1
+            </Typography>
           </Box>
-            
-          {selectedStock || selectedStock2 || selectedStock3 ? (
-            <>
-              {favSymbols && isAtLeastOneFavorite && (
-                <Paper
-                  elevation={0}
-                  sx={{
-                    borderRadius: common.borderRadius.default,
-                    boxShadow: common.shadows.card,
-                    overflow: 'hidden',
-                    height: '400px',
-                    mb: 3,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '& > div': {
-                      flex: 1,
-                      minHeight: 0
-                    },
-                    '&:hover': {
-                      boxShadow: common.shadows.cardHover,
-                    }
-                  }}
-                >
-                  <CompareChart
-                    data1={historicalData1}
-                    data2={historicalData2}
-                    data3={historicalData3}
-                    symbol1={selectedStock?.symbol || ''}
-                    symbol2={selectedStock2?.symbol || ''}
-                    symbol3={selectedStock3?.symbol || ''}
-                    timeRange={timeRange}
-                    onTimeRangeChange={setTimeRange}
-                  />
-                </Paper>
-              )}
-
-              <Box sx={{ 
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                mt: 0
-              }}>
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  gap: { xs: 2, md: 3 },
-                  my: 0,
-                  px: 2.5,
-                  justifyContent: 'center',
-                  alignItems: 'flex-start',
-                  width: '100%'
-                }}>
-                </Box>
-                
-                {/* Table Section */}
-                <Box sx={{ 
-                  borderRadius: 2,
-                  bgcolor: '#FFFFFF',
-                  overflow: 'hidden',
-                  mt: 0
-                }}>
-                  <TableContainer>
-                    {renderMetricsTable(compareData.metrics, compareData2.metrics, compareData3.metrics)}
-                  </TableContainer>
-                </Box>
-              </Box>
-            </>
-          ) : (
-            <NoStockMessage />
-          )}
+          <Box className="css-raoz7y" sx={{ width: '100% !important', p: '0 !important' }}>
+            <StockSelector
+              onSelect={handleStockSelect}
+              selectedSymbol={selectedStock?.symbol || null}
+              hideMic={true}
+            />
+          </Box>
         </Box>
-      </Paper>
+
+        <Box 
+          className="css-1xz3dvu"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '396px'
+          }}
+        >
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            height: 32,
+            mb: 0.5
+          }}>
+            <Typography 
+              variant="subtitle1"
+              className="css-1blsivr-MuiTypography-root"
+              sx={{
+                fontWeight: 600,
+                color: theme.palette.text.primary,
+                fontSize: '0.9375rem'
+              }}
+            >
+              Stock 2
+            </Typography>
+          </Box>
+          <Box className="css-raoz7y" sx={{ width: '100% !important', p: '0 !important' }}>
+            <StockSelector
+              onSelect={handleStock2Select}
+              selectedSymbol={selectedStock2?.symbol || null}
+              hideMic={true}
+            />
+          </Box>
+        </Box>
+
+        <Box 
+          className="css-1xz3dvu"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '396px'
+          }}
+        >
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            height: 32,
+            mb: 0.5
+          }}>
+            <Typography 
+              variant="subtitle1"
+              className="css-1blsivr-MuiTypography-root"
+              sx={{
+                fontWeight: 600,
+                color: theme.palette.text.primary,
+                fontSize: '0.9375rem'
+              }}
+            >
+              Stock 3
+            </Typography>
+          </Box>
+          <Box className="css-raoz7y" sx={{ width: '100% !important', p: '0 !important' }}>
+            <StockSelector
+              onSelect={handleStock3Select}
+              selectedSymbol={selectedStock3?.symbol || null}
+              hideMic={true}
+            />
+          </Box>
+        </Box>
+      </Box>
+
+      {selectedStock || selectedStock2 || selectedStock3 ? (
+        isAtLeastOneFavorite ? (
+          <>
+            <Box sx={{
+              bgcolor: 'background.paper',
+              borderRadius: 2,
+              overflow: 'hidden',
+              mt: 2
+            }}>
+              <CompareChart
+                data={{
+                  ...(selectedStock?.symbol && favSymbols.includes(selectedStock.symbol) ? { [selectedStock.symbol]: historicalData1 } : {}),
+                  ...(selectedStock2?.symbol && favSymbols.includes(selectedStock2.symbol) ? { [selectedStock2.symbol]: historicalData2 } : {}),
+                  ...(selectedStock3?.symbol && favSymbols.includes(selectedStock3.symbol) ? { [selectedStock3.symbol]: historicalData3 } : {})
+                }}
+                timeRange={timeRange}
+                onTimeRangeChange={setTimeRange}
+              />
+            </Box>
+
+            <StyledTableContainer>
+              {renderMetricsTable(
+                selectedStock?.symbol && favSymbols.includes(selectedStock.symbol) ? compareData.metrics : undefined,
+                selectedStock2?.symbol && favSymbols.includes(selectedStock2.symbol) ? compareData2.metrics : undefined,
+                selectedStock3?.symbol && favSymbols.includes(selectedStock3.symbol) ? compareData3.metrics : undefined
+              )}
+            </StyledTableContainer>
+          </>
+        ) : (
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant="body1" color="text.secondary">
+              Please select at least one favorite stock to view the comparison chart.
+            </Typography>
+          </Box>
+        )
+      ) : (
+        <NoStockMessage />
+      )}
     </Box>
   );
 };
