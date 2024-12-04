@@ -28,17 +28,17 @@ A comprehensive platform for analyzing Put-Call Ratio (PCR) and option chain dat
 - React.js with TypeScript
 - Material-UI for component styling
 - Recharts for data visualization
-- Redux for state management
+- Custom state management with React hooks
 
 ### Backend
-- Python (FastAPI)
+- Node.js with Express
 - Real-time data processing
-- WebSocket integration for live updates
-- Data caching for optimal performance
+- RESTful API endpoints
+- JSON-based data storage
 
-### Database
-- PostgreSQL for data persistence
-- Redis for caching (optional)
+### Data Storage
+- Local JSON files for data persistence
+- Real-time data updates
 
 ## Project Structure
 
@@ -48,26 +48,29 @@ A comprehensive platform for analyzing Put-Call Ratio (PCR) and option chain dat
 │   ├── 📂 src
 │   │   ├── 📂 components
 │   │   │   ├── AnalysisChart.tsx
-│   │   │   ├── DetailedMetrics.tsx
+│   │   │   ├── BaseChart.tsx
+│   │   │   ├── CompareChart.tsx
 │   │   │   ├── OptionChainTable.tsx
 │   │   │   └── StockSelector.tsx
 │   │   ├── 📂 pages
-│   │   │   └── AnalysisPage.tsx
-│   │   ├── 📂 store
-│   │   │   ├── store.ts
-│   │   │   └── optionChainSlice.ts
+│   │   │   ├── AnalysisPage.tsx
+│   │   │   └── ComparePage.tsx
 │   │   ├── 📂 styles
-│   │   │   ├── theme
-│   │   │   └── components
+│   │   │   └── theme
 │   │   ├── 📂 services
 │   │   │   └── api.ts
 │   │   └── 📂 utils
-│   │       └── formatters.ts
 │   ├── package.json
 │   └── tsconfig.json
 ├── 📂 backend
 │   ├── 📂 data
-│   │   └── symbolData
+│   │   ├── symbolData
+│   │   │   ├── ADANIPORTS-data.json
+│   │   │   ├── BANKNIFTY-data.json
+│   │   │   ├── NIFTY-data.json
+│   │   │   ├── TATASTEEL-data.json
+│   │   │   └── VEDL-data.json
+│   │   └── favSymbols.json
 │   ├── server.js
 │   └── package.json
 └── README.md
@@ -75,32 +78,28 @@ A comprehensive platform for analyzing Put-Call Ratio (PCR) and option chain dat
 
 Key Directories:
 - `frontend/`: React application with TypeScript
-  - `components/`: Reusable UI components
-  - `pages/`: Main application views
-  - `store/`: Redux state management
-  - `styles/`: Theme and component styles
+  - `components/`: Reusable UI components including charts and tables
+  - `pages/`: Analysis and Compare pages for different views
+  - `styles/`: Theme configuration
   - `services/`: API integration
-  - `utils/`: Helper functions
 
 - `backend/`: Node.js server
-  - `data/`: Market data storage
-  - `server.js`: API endpoints and WebSocket handlers
+  - `data/`: JSON-based market data storage
+  - `server.js`: Express API endpoints
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js (v16 or higher)
-- Python 3.8+
-- PostgreSQL
 - Git
 
 ### Installation
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/pcr-analysis.git
-cd pcr-analysis
+git clone https://github.com/AnchitJain08/StockVistra.git
+cd StockVistra
 ```
 
 2. Frontend Setup
@@ -114,29 +113,18 @@ The frontend will be available at `http://localhost:3000`
 3. Backend Setup
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-pip install -r requirements.txt
-python main.py
+npm install
+node server.js
 ```
 The backend API will be available at `http://localhost:4000`
-
-### Environment Configuration
-
-Create a `.env` file in the backend directory:
-```env
-DATABASE_URL=postgresql://username:password@localhost:5432/pcr_db
-REDIS_URL=redis://localhost:6379  # Optional
-PORT=4000
-```
 
 ## Usage
 
 1. Select a stock from the dropdown menu
 2. View real-time PCR values and trends
 3. Analyze option chain data with color-coded indicators
-4. Track historical PCR data through interactive charts
-5. Monitor market sentiment and make informed decisions
+4. Compare multiple stocks' PCR trends
+5. Track favorite symbols for quick access
 
 ## Contributing
 
