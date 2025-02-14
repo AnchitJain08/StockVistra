@@ -2,9 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { OptionChainData} from '../types';
 import { 
     AVAILABLE_SYMBOLS, 
-    getSymbolType, 
-    getSymbolStride,
-    calculateATMStrike,
+    getSymbolType
 } from '../constants/symbols';
 
 // Proxy server URL
@@ -99,8 +97,13 @@ const getOptionChain = async (symbol: string): Promise<{ optionChain: OptionChai
         const timestamp = new Date().toISOString();
         const expiryDate = rawData[0]?.expiryDate || '';
         const spotPrice = rawData[0]?.underlyingValue || 0;
-        const stride = getSymbolStride(symbol);
-        const atmStrike = calculateATMStrike(spotPrice, stride);
+
+        // Find ATM strike (closest to spot price)
+        const atmStrike = rawData.reduce((closest: number, current: any) => {
+            return Math.abs(current.strikePrice - spotPrice) < Math.abs(closest - spotPrice) 
+                ? current.strikePrice 
+                : closest;
+        }, rawData[0]?.strikePrice || 0);
 
         // Calculate metrics
         let totalCallOI = 0;

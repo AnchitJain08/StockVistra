@@ -178,15 +178,12 @@ const OptionChainTable: React.FC = () => {
     React.useEffect(() => {
         const fetchOptionChainData = async () => {
             if (!selectedStock?.symbol) {
-                console.log('No stock selected');
                 return;
             }
             
-            console.log('Fetching data for:', selectedStock.symbol);
             dispatch(setLoading(true));
             try {
                 const response = await api.getOptionChain(selectedStock.symbol);
-                console.log('API Response:', response);
                 const optionChainData = response.optionChain;
                 
                 let totalCallOI = 0;
@@ -285,7 +282,6 @@ const OptionChainTable: React.FC = () => {
 
                 dispatch(setError(null));
             } catch (err) {
-                console.error('Error fetching data:', err);
                 dispatch(setError('Failed to fetch option chain data'));
             } finally {
                 dispatch(setLoading(false));

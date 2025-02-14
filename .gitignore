@@ -48,3 +48,11 @@ yarn-error.log*
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Data files
+/backend/data/symbolData/
+/backend/data/eodData/
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json

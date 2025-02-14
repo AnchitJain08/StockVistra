@@ -1,6 +1,5 @@
 export interface SymbolConfig {
     name: string;
-    stride: number;
 }
 
 interface SymbolsData {
@@ -9,758 +8,699 @@ interface SymbolsData {
 }
 
 export const AVAILABLE_SYMBOLS: SymbolsData = {
-    indices: {
-        'NIFTY': { 
-            name: 'NIFTY 50',
-            stride: 50.0
-        },
-        'NIFTYNXT50': {
-            name: 'NIFTY NEXT 50',
-            stride: 100.0
-        },
-        'BANKNIFTY': {
-            name: 'NIFTY BANK',
-            stride: 500.0
-        },
-        'FINNIFTY': {
-            name: 'NIFTY FIN SERVICES',
-            stride: 100.0
-        },
-        'MIDCPNIFTY': {
-            name: 'NIFTY MIDCAP SELECT',
-            stride: 100.0
-        }
+  "indices": {
+    "NIFTY": {
+      "name": "NIFTY 50"
     },
-    equities: {
-        'AARTIIND': { 
-            name: 'Aarti Industries Ltd.', 
-            stride: 10 
-        },
-        'ABB': { 
-            name: 'ABB India Ltd.', 
-            stride: 100 
-        },
-        'ABBOTINDIA': { 
-            name: 'Abbott India Ltd.', 
-            stride: 250 
-        },
-        'ABCAPITAL': { 
-            name: 'Aditya Birla Capital Ltd.', 
-            stride: 2.5 
-        },
-        'ABFRL': { 
-            name: 'Aditya Birla Fashion and Retail Ltd.', 
-            stride: 5 
-        },
-        'ACC': { 
-            name: 'ACC Ltd.', 
-            stride: 20 
-        },
-        'ADANIENT': { 
-            name: 'Adani Enterprises Ltd.', 
-            stride: 20 
-        },
-        'ADANIPORTS': { 
-            name: 'Adani Ports and Special Economic Zone Ltd.', 
-            stride: 20 
-        },
-        'ALKEM': { 
-            name: 'Alkem Laboratories Ltd.', 
-            stride: 100 
-        },
-        'AMBUJACEM': { 
-            name: 'Ambuja Cements Ltd.', 
-            stride: 10 
-        },
-        'APOLLOHOSP': { 
-            name: 'Apollo Hospitals Enterprise Ltd.', 
-            stride: 50 },
-        'APOLLOTYRE': { 
-            name: 'Apollo Tyres Ltd.', 
-            stride: 10
-         },
-        'ASHOKLEY': { 
-            name: 'Ashok Leyland Ltd.', 
-            stride: 2.5 },
-        'ASTRAL': { 
-            name: 'Astral Ltd.', 
-            stride: 20 
-        },
-        'ASIANPAINT': { 
-            name: 'Asian Paints Ltd.', 
-            stride: 20 
-        },
-        'ATUL': { 
-            name: 'Atul Ltd.', 
-            stride: 50 
-        },
-        'AUBANK': { 
-            name: 'AU Small Finance Bank Ltd.', 
-            stride: 10 
-        },
-        'AUROPHARMA': { 
-            name: 'Aurobindo Pharma Ltd.', 
-            stride: 20 
-        },
-        'AXISBANK': { 
-            name: 'Axis Bank Ltd.', 
-            stride: 10 
-        },
-        'BAJAJ-AUTO': { 
-            name: 'Bajaj Auto Ltd.', 
-            stride: 100 
-        },
-        'BAJAJFINSV': { 
-            name: 'Bajaj Finserv Ltd.', 
-            stride: 20 
-        },
-        'BAJFINANCE': { 
-            name: 'Bajaj Finance Ltd.', 
-            stride: 100 
-        },
-        'BALKRISIND': { 
-            name: 'Balkrishna Industries Ltd.', 
-            stride: 50 
-        },
-        'BANDHANBNK': { 
-            name: 'Bandhan Bank Ltd.', 
-            stride: 2.5 
-        },
-        'BANKBARODA': { 
-            name: 'Bank of Baroda', 
-            stride: 2.5 
-        },
-        'BATAINDIA': { 
-            name: 'Bata India Ltd.', 
-            stride: 20 
-        },
-        'BEL': { 
-            name: 'Bharat Electronics Ltd.', 
-            stride: 5 
-        },
-        'BERGEPAINT': { 
-            name: 'Berger Paints India Ltd.', 
-            stride: 5 
-        },
-        'BHARATFORG': { 
-            name: 'Bharat Forge Ltd.', 
-            stride: 20 
-        },
-        'BHARTIARTL': { 
-            name: 'Bharti Airtel Ltd.', 
-            stride: 20 
-        },
-        'BHEL': { 
-            name: 'Bharat Heavy Electricals Ltd.', 
-            stride: 5 
-        },
-        'BIOCON': { 
-            name: 'Biocon Ltd.', 
-            stride: 5 
-        },
-        'BOSCHLTD': { 
-            name: 'Bosch Ltd.', 
-            stride: 500 
-        },
-        'BPCL': { 
-            name: 'Bharat Petroleum Corporation Ltd.', 
-            stride: 5 
-        },
-        'BRITANNIA': { 
-            name: 'Britannia Industries Ltd.', 
-            stride: 50 
-        },
-        'BSOFT': { 
-            name: 'Birlasoft Ltd.', 
-            stride: 10 
-        },
-        'CANBK': { 
-            name: 'Canara Bank', 
-            stride: 1 
-        },
-        'CANFINHOME': { 
-            name: 'Can Fin Homes Ltd.', 
-            stride: 10 
-        },
-        'CHAMBLFERT': { 
-            name: 'Chambal Fertilisers and Chemicals Ltd.', 
-            stride: 10 
-        },
-        'CHOLAFIN': { name: 'Cholamandalam Investment and Finance Company Ltd.', 
-            stride: 20 
-        },
-        'CIPLA': { 
-            name: 'Cipla Ltd.', 
-            stride: 20 
-        },
-        'COALINDIA': { 
-            name: 'Coal India Ltd.', 
-            stride: 10 
-        },
-        'COFORGE': { 
-            name: 'Coforge Ltd.', 
-            stride: 100 
-        },
-        'COLPAL': { 
-            name: 'Colgate-Palmolive (India) Ltd.', 
-            stride: 50 
-        },
-        'CONCOR': { 
-            name: 'Container Corporation of India Ltd.', 
-            stride: 20 
-        },
-        'COROMANDEL': { 
-            name: 'Coromandel International Ltd.', 
-            stride: 20 
-        },
-        'CROMPTON': { 
-            name: 'Crompton Greaves Consumer Electricals Ltd.', 
-            stride: 5 
-        },
-        'CUB': { 
-            name: 'City Union Bank Ltd.', 
-            stride: 2.5 
-        },
-        'CUMMINSIND': { 
-            name: 'Cummins India Ltd.', 
-            stride: 50 
-        },
-        'DABUR': { 
-            name: 'Dabur India Ltd.', 
-            stride: 5 
-        },
-        'DALBHARAT': { 
-            name: 'Dalmia Bharat Ltd.', 
-            stride: 20 
-        },
-        'DEEPAKNTR': { 
-            name: 'Deepak Nitrite Ltd.', 
-            stride: 50 
-        },
-        'DIVISLAB': { 
-            name: 'Divi\'s Laboratories Ltd.', 
-            stride: 50 
-        },
-        'DIXON': { 
-            name: 'Dixon Technologies (India) Ltd.', 
-            stride: 100 
-        },
-        'DLF': { 
-            name: 'DLF Ltd.', 
-            stride: 10 
-        },
-        'DRREDDY': { 
-            name: 'Dr. Reddy\'s Laboratories Ltd.',
-             stride: 50
-        },
-        'EICHERMOT': { 
-            name: 'Eicher Motors Ltd.', 
-            stride: 50 
-        },
-        'ESCORTS': { 
-            name: 'Escorts Kubota Ltd.', 
-            stride: 50 
-        },
-        'EXIDEIND': { 
-            name: 'Exide Industries Ltd.', 
-            stride: 10 
-        },
-        'FEDERALBNK': { 
-            name: 'The Federal Bank Ltd.', 
-            stride: 2.5 
-        },
-        'GAIL': { 
-            name: 'GAIL (India) Ltd.', 
-            stride: 5 
-        },
-        'GLENMARK': { 
-            name: 'Glenmark Pharmaceuticals Ltd.', 
-            stride: 20 
-        },
-        'GMRINFRA': { 
-            name: 'GMR Airports Infrastructure Ltd.', 
-            stride: 2.5 
-        },
-        'GNFC': { 
-            name: 'Gujarat Narmada Valley Fertilizers & Chemicals Ltd.', 
-            stride: 10 
-        },
-        'GODREJCP': { 
-            name: 'Godrej Consumer Products Ltd.', 
-            stride: 20 
-        },
-        'GODREJPROP': { 
-            name: 'Godrej Properties Ltd.', 
-            stride: 50 
-        },
-        'GRANULES': { 
-            name: 'Granules India Ltd.', 
-            stride: 5 
-        },
-        'GRASIM': { 
-            name: 'Grasim Industries Ltd.', 
-            stride: 20 
-        },
-        'GUJGASLTD': { 
-            name: 'Gujarat Gas Ltd.', 
-            stride: 10 
-        },
-        'HAL': { 
-            name: 'Hindustan Aeronautics Ltd.', 
-            stride: 100 
-        },
-        'HAVELLS': { 
-            name: 'Havells India Ltd.', 
-            stride: 20 
-        },
-        'HCLTECH': { 
-            name: 'HCL Technologies Ltd.', 
-            stride: 20 
-        },
-        'HDFCAMC': { 
-            name: 'HDFC Asset Management Company Ltd.', 
-            stride: 50 
-        },
-        'HDFCBANK': { 
-            name: 'HDFC Bank Ltd.', 
-            stride: 10 
-        },
-        'HDFCLIFE': { 
-            name: 'HDFC Life Insurance Company Ltd.', 
-            stride: 5 
-        },
-        'HEROMOTOCO': { 
-            name: 'Hero MotoCorp Ltd.', 
-            stride: 100 
-        },
-        'HINDALCO': { 
-            name: 'Hindalco Industries Ltd.', 
-            stride: 10 
-        },
-        'HINDCOPPER': { 
-            name: 'Hindustan Copper Ltd.', 
-            stride: 10 
-        },
-        'HINDPETRO': { 
-            name: 'Hindustan Petroleum Corporation Ltd.', 
-            stride: 9 
-        },
-        'HINDUNILVR': { 
-            name: 'Hindustan Unilever Ltd.', 
-            stride: 20 
-        },
-        'ICICIBANK': { 
-            name: 'ICICI Bank Ltd.', 
-            stride: 10 
-        },
-        'ICICIGI': { 
-            name: 'ICICI Lombard General Insurance Company Ltd.', 
-            stride: 20 
-        },
-        'ICICIPRULI': { 
-            name: 'ICICI Prudential Life Insurance Company Ltd.', 
-            stride: 10 
-        },
-        'IDEA': { 
-            name: 'Vodafone Idea Ltd.', 
-            stride: 1 
-        },
-        'IDFC': { 
-            name: 'IDFC Ltd.', 
-            stride: 1 
-        },
-        'IDFCFIRSTB': { 
-            name: 'IDFC First Bank Ltd.', 
-            stride: 1 
-        },
-        'IEX': { 
-            name: 'Indian Energy Exchange Ltd.', 
-            stride: 2.5 
-        },
-        'IGL': { 
-            name: 'Indraprastha Gas Ltd.', 
-            stride: 5 
-        },
-        'INDHOTEL': { 
-            name: 'The Indian Hotels Company Ltd.', 
-            stride: 10 
-        },
-        'INDIACEM': { 
-            name: 'The India Cements Ltd.', 
-            stride: 5 
-        },
-        'INDIAMART': { 
-            name: 'IndiaMART InterMESH Ltd.', 
-            stride: 20 
-        },
-        'INDIGO': { 
-            name: 'InterGlobe Aviation Ltd.', 
-            stride: 50 
-        },
-        'INDUSINDBK': { 
-            name: 'IndusInd Bank Ltd.', 
-            stride: 20 
-        },
-        'INDUSTOWER': { 
-            name: 'Indus Towers Ltd.', 
-            stride: 5 
-        },
-        'INFY': { 
-            name: 'Infosys Ltd.', 
-            stride: 20 
-        },
-        'IOC': { 
-            name: 'Indian Oil Corporation Ltd.', 
-            stride: 2.5 
-        },
-        'IPCALAB': { 
-            name: 'IPCA Laboratories Ltd.', 
-            stride: 20 
-        },
-        'IRCTC': { 
-            name: 'Indian Railway Catering and Tourism Corporation Ltd.', 
-            stride: 20 
-        },
-        'ITC': { 
-            name: 'ITC Ltd.', 
-            stride: 5 
-        },
-        'JINDALSTEL': { 
-            name: 'Jindal Steel & Power Ltd.', 
-            stride: 20 
-        },
-        'JKCEMENT': { 
-            name: 'JK Cement Ltd.', 
-            stride: 50 
-        },
-        'JSWSTEEL': { 
-            name: 'JSW Steel Ltd.', 
-            stride: 10 
-        },
-        'JUBLFOOD': { 
-            name: 'Jubilant FoodWorks Ltd.', 
-            stride: 5 
-        },
-        'KOTAKBANK': { 
-            name: 'Kotak Mahindra Bank Ltd.', 
-            stride: 20 
-        },
-        'LALPATHLAB': { 
-            name: 'Dr. Lal PathLabs Ltd.', 
-            stride: 50 
-        },
-        'LAURUSLABS': { 
-            name: 'Laurus Labs Ltd.', 
-            stride: 5 
-        },
-        'LICHSGFIN': { 
-            name: 'LIC Housing Finance Ltd.', 
-            stride: 10 
-        },
-        'LT': { 
-            name: 'Larsen & Toubro Ltd.', 
-            stride: 50 
-        },
-        'LTF': { 
-            name: 'L&T Finance Holdings Ltd.', 
-            stride: 2.5 
-        },
-        'LTIM': { 
-            name: 'LTIMindtree Ltd.', 
-            stride: 50 
-        },
-        'LTTS': { 
-            name: 'L&T Technology Services Ltd.', 
-            stride: 50 
-        },
-        'LUPIN': { 
-            name: 'Lupin Ltd.', 
-            stride: 20 
-        },
-        'M&M': { 
-            name: 'Mahindra & Mahindra Ltd.', 
-            stride: 50 
-        },
-        'M&MFIN': { 
-            name: 'Mahindra & Mahindra Financial Services Ltd.', 
-            stride: 3.7 
-        },
-        'MANAPPURAM': { 
-            name: 'Manappuram Finance Ltd.', 
-            stride: 2.5 
-        },
-        'MARICO': { 
-            name: 'Marico Ltd.', 
-            stride: 5 
-        },
-        'MARUTI': { 
-            name: 'Maruti Suzuki India Ltd.', 
-            stride: 100 
-        },
-        'MCX': { 
-            name: 'Multi Commodity Exchange of India Ltd.', 
-            stride: 50 
-        },
-        'METROPOLIS': { 
-            name: 'Metropolis Healthcare Ltd.', 
-            stride: 20 
-        },
-        'MFSL': { 
-            name: 'Max Financial Services Ltd.', 
-            stride: 20 
-        },
-        'MGL': { 
-            name: 'Mahanagar Gas Ltd.', 
-            stride: 20 
-        },
-        'MOTHERSON': { 
-            name: 'Motherson Sumi Wiring India Ltd.', 
-            stride: 2.5 
-        },
-        'MPHASIS': { 
-            name: 'Mphasis Ltd.', 
-            stride: 50 
-        },
-        'MRF': { 
-            name: 'MRF Ltd.', 
-            stride: 500 
-        },
-        'MUTHOOTFIN': { 
-            name: 'Muthoot Finance Ltd.', 
-            stride: 20 
-        },
-        'NATIONALUM': { 
-            name: 'National Aluminium Company Ltd.', 
-            stride: 5 
-        },
-        'NAUKRI': { 
-            name: 'Info Edge (India) Ltd.', 
-            stride: 100 
-        },
-        'NAVINFLUOR': { 
-            name: 'Navin Fluorine International Ltd.', 
-            stride: 50 
-        },
-        'NESTLEIND': { 
-            name: 'Nestle India Ltd.', 
-            stride: 20 
-        },
-        'NMDC': { 
-            name: 'NMDC Ltd.', 
-            stride: 5 
-        },
-        'NTPC': { 
-            name: 'NTPC Ltd.', 
-            stride: 5 
-        },
-        'OBEROIRLTY': { 
-            name: 'Oberoi Realty Ltd.', 
-            stride: 20 
-        },
-        'OFSS': { 
-            name: 'Oracle Financial Services Software Ltd.', 
-            stride: 100 
-        },
-        'ONGC': { 
-            name: 'Oil and Natural Gas Corporation Ltd.', 
-            stride: 5 
-        },
-        'PAGEIND': { 
-            name: 'Page Industries Ltd.', 
-            stride: 500 
-        },
-        'PEL': { 
-            name: 'Piramal Enterprises Ltd.', 
-            stride: 10 
-        },
-        'PERSISTENT': { 
-            name: 'Persistent Systems Ltd.', 
-            stride: 50 
-        },
-        'PETRONET': { 
-            name: 'Petronet LNG Ltd.', 
-            stride: 5 
-        },
-        'PFC': { 
-            name: 'Power Finance Corporation Ltd.', 
-            stride: 10 
-        },
-        'PIDILITIND': { 
-            name: 'Pidilite Industries Ltd.', 
-            stride: 20 
-        },
-        'PIIND': { 
-            name: 'PI Industries Ltd.', 
-            stride: 50 
-        },
-        'PNB': { 
-            name: 'Punjab National Bank', 
-            stride: 2.5 
-        },
-        'POLYCAB': { 
-            name: 'Polycab India Ltd.', 
-            stride: 100 
-        },
-        'POWERGRID': { 
-            name: 'Power Grid Corporation of India Ltd.', 
-            stride: 5 
-        },
-        'PVRINOX': { 
-            name: 'PVR INOX Ltd.', 
-            stride: 20 
-        },
-        'RAMCOCEM': { 
-            name: 'The Ramco Cements Ltd.', 
-            stride: 10 
-        },
-        'RBLBANK': { 
-            name: 'RBL Bank Ltd.', 
-            stride: 5 
-        },
-        'RECLTD': { 
-            name: 'REC Ltd.', 
-            stride: 10 
-        },
-        'RELIANCE': { 
-            name: 'Reliance Industries Ltd.', 
-            stride: 20 
-        },
-        'SAIL': { 
-            name: 'Steel Authority of India Ltd.', 
-            stride: 2.5 
-        },
-        'SBICARD': { 
-            name: 'SBI Cards and Payment Services Ltd.', 
-            stride: 5 
-        },
-        'SBILIFE': { 
-            name: 'SBI Life Insurance Company Ltd.', 
-            stride: 20 
-        },
-        'SBIN': { 
-            name: 'State Bank of India', 
-            stride: 10 
-        },
-        'SHREECEM': { 
-            name: 'Shree Cement Ltd.', 
-            stride: 50 
-        },
-        'SHRIRAMFIN': { 
-            name: 'Shriram Finance Ltd.', 
-            stride: 50 
-        },
-        'SIEMENS': { 
-            name: 'Siemens Ltd.', 
-            stride: 100 
-        },
-        'SRF': { 
-            name: 'SRF Ltd.', 
-            stride: 20 
-        },
-        'SUNPHARMA': { 
-            name: 'Sun Pharmaceutical Industries Ltd.', 
-            stride: 20 
-        },
-        'SUNTV': { 
-            name: 'Sun TV Network Ltd.', 
-            stride: 10 
-        },
-        'SYNGENE': { 
-            name: 'Syngene International Ltd.', 
-            stride: 10 
-        },
-        'TATACHEM': { 
-            name: 'Tata Chemicals Ltd.', 
-            stride: 10 
-        },
-        'TATACOMM': { 
-            name: 'Tata Communications Ltd.', 
-            stride: 20 
-        },
-        'TATACONSUM': { 
-            name: 'Tata Consumer Products Ltd.', 
-            stride: 5 
-        },
-        'TATAMOTORS': { 
-            name: 'Tata Motors Ltd.', 
-            stride: 10 
-        },
-        'TATAPOWER': { 
-            name: 'Tata Power Company Ltd.', 
-            stride: 5 
-        },
-        'TATASTEEL': { 
-            name: 'Tata Steel Ltd.', 
-            stride: 2.5 
-        },
-        'TCS': { 
-            name: 'Tata Consultancy Services Ltd.', 
-            stride: 50 
-        },
-        'TECHM': { 
-            name: 'Tech Mahindra Ltd.', 
-            stride: 20 
-        },
-        'TITAN': { 
-            name: 'Titan Company Ltd.', 
-            stride: 20 
-        },
-        'TORNTPHARM': { 
-            name: 'Torrent Pharmaceuticals Ltd.', 
-            stride: 20 
-        },
-        'TRENT': { 
-            name: 'Trent Ltd.', 
-            stride: 100 
-        },
-        'TVSMOTOR': { 
-            name: 'TVS Motor Company Ltd.', 
-            stride: 20 
-        },
-        'UBL': { 
-            name: 'United Breweries Ltd.', 
-            stride: 20 
-        },
-        'ULTRACEMCO': { 
-            name: 'UltraTech Cement Ltd.', 
-            stride: 100 
-        },
-        'UNITDSPR': { 
-            name: 'United Spirits Ltd.', 
-            stride: 20 
-        },
-        'UPL': { 
-            name: 'UPL Ltd.', 
-            stride: 5 
-        },
-        'VEDL': { 
-            name: 'Vedanta Ltd.', 
-            stride: 10 
-        },
-        'VOLTAS': { 
-            name: 'Voltas Ltd.', 
-            stride: 20 
-        },
-        'WIPRO': { 
-            name: 'Wipro Ltd.', 
-            stride: 5 
-        },
-        'ZYDUSLIFE': { 
-            name: 'Zydus Lifesciences Ltd.', 
-            stride: 20 
-        },
+    "NIFTYNXT50": {
+      "name": "NIFTY NEXT 50"
+    },
+    "BANKNIFTY": {
+      "name": "NIFTY BANK"
+    },
+    "FINNIFTY": {
+      "name": "NIFTY FIN SERVICES"
+    },
+    "MIDCPNIFTY": {
+      "name": "NIFTY MIDCAP SELECT"
     }
+  },
+  "equities": {
+    "AARTIIND": {
+      "name": "Aarti Industries Limited"
+    },
+    "ABB": {
+      "name": "ABB India Limited"
+    },
+    "ABBOTINDIA": {
+      "name": "Abbott India Limited"
+    },
+    "ABCAPITAL": {
+      "name": "Aditya Birla Capital Limited"
+    },
+    "ABFRL": {
+      "name": "Aditya Birla Fashion and Retail Limited"
+    },
+    "ACC": {
+      "name": "ACC Limited"
+    },
+    "ADANIENSOL": {
+      "name": "Adani Energy Solutions Limited"
+    },
+    "ADANIENT": {
+      "name": "Adani Enterprises Limited"
+    },
+    "ADANIGREEN": {
+      "name": "Adani Green Energy Limited"
+    },
+    "ADANIPORTS": {
+      "name": "Adani Ports and Special Economic Zone Limited"
+    },
+    "ALKEM": {
+      "name": "Alkem Laboratories Limited"
+    },
+    "AMBUJACEM": {
+      "name": "Ambuja Cements Limited"
+    },
+    "ANGELONE": {
+      "name": "Angel One Limited"
+    },
+    "APLAPOLLO": {
+      "name": "APL Apollo Tubes Limited"
+    },
+    "APOLLOHOSP": {
+      "name": "Apollo Hospitals Enterprise Limited"
+    },
+    "APOLLOTYRE": {
+      "name": "Apollo Tyres Limited"
+    },
+    "ASHOKLEY": {
+      "name": "Ashok Leyland Limited"
+    },
+    "ASIANPAINT": {
+      "name": "Asian Paints Limited"
+    },
+    "ASTRAL": {
+      "name": "Astral Limited"
+    },
+    "ATGL": {
+      "name": "Adani Total Gas Limited"
+    },
+    "ATUL": {
+      "name": "Atul Limited"
+    },
+    "AUBANK": {
+      "name": "AU Small Finance Bank Limited"
+    },
+    "AUROPHARMA": {
+      "name": "Aurobindo Pharma Limited"
+    },
+    "AXISBANK": {
+      "name": "Axis Bank Limited"
+    },
+    "BAJAJ-AUTO": {
+      "name": "Bajaj Auto Limited"
+    },
+    "BAJAJFINSV": {
+      "name": "Bajaj Finserv Limited"
+    },
+    "BAJFINANCE": {
+      "name": "Bajaj Finance Limited"
+    },
+    "BALKRISIND": {
+      "name": "Balkrishna Industries Limited"
+    },
+    "BANDHANBNK": {
+      "name": "Bandhan Bank Limited"
+    },
+    "BANKBARODA": {
+      "name": "Bank of Baroda"
+    },
+    "BANKINDIA": {
+      "name": "Bank of India"
+    },
+    "BATAINDIA": {
+      "name": "Bata India Limited"
+    },
+    "BEL": {
+      "name": "Bharat Electronics Limited"
+    },
+    "BERGEPAINT": {
+      "name": "Berger Paints (I) Limited"
+    },
+    "BHARATFORG": {
+      "name": "Bharat Forge Limited"
+    },
+    "BHARTIARTL": {
+      "name": "Bharti Airtel Limited"
+    },
+    "BHEL": {
+      "name": "Bharat Heavy Electricals Limited"
+    },
+    "BIOCON": {
+      "name": "Biocon Limited"
+    },
+    "BOSCHLTD": {
+      "name": "Bosch Limited"
+    },
+    "BPCL": {
+      "name": "Bharat Petroleum Corporation Limited"
+    },
+    "BRITANNIA": {
+      "name": "Britannia Industries Limited"
+    },
+    "BSE": {
+      "name": "BSE Limited"
+    },
+    "BSOFT": {
+      "name": "BIRLASOFT LIMITED"
+    },
+    "CAMS": {
+      "name": "Computer Age Management Services Limited"
+    },
+    "CANBK": {
+      "name": "Canara Bank"
+    },
+    "CANFINHOME": {
+      "name": "Can Fin Homes Limited"
+    },
+    "CDSL": {
+      "name": "Central Depository Services (India) Limited"
+    },
+    "CESC": {
+      "name": "CESC Limited"
+    },
+    "CGPOWER": {
+      "name": "CG Power and Industrial Solutions Limited"
+    },
+    "CHAMBLFERT": {
+      "name": "Chambal Fertilizers & Chemicals Limited"
+    },
+    "CHOLAFIN": {
+      "name": "Cholamandalam Investment and Finance Company Limited"
+    },
+    "CIPLA": {
+      "name": "Cipla Limited"
+    },
+    "COALINDIA": {
+      "name": "Coal India Limited"
+    },
+    "COFORGE": {
+      "name": "Coforge Limited"
+    },
+    "COLPAL": {
+      "name": "Colgate Palmolive (India) Limited"
+    },
+    "CONCOR": {
+      "name": "Container Corporation of India Limited"
+    },
+    "COROMANDEL": {
+      "name": "Coromandel International Limited"
+    },
+    "CROMPTON": {
+      "name": "Crompton Greaves Consumer Electricals Limited"
+    },
+    "CUB": {
+      "name": "City Union Bank Limited"
+    },
+    "CUMMINSIND": {
+      "name": "Cummins India Limited"
+    },
+    "CYIENT": {
+      "name": "Cyient Limited"
+    },
+    "DABUR": {
+      "name": "Dabur India Limited"
+    },
+    "DALBHARAT": {
+      "name": "Dalmia Bharat Limited"
+    },
+    "DEEPAKNTR": {
+      "name": "Deepak Nitrite Limited"
+    },
+    "DELHIVERY": {
+      "name": "Delhivery Limited"
+    },
+    "DIVISLAB": {
+      "name": "Divi's Laboratories Limited"
+    },
+    "DIXON": {
+      "name": "Dixon Technologies (India) Limited"
+    },
+    "DLF": {
+      "name": "DLF Limited"
+    },
+    "DMART": {
+      "name": "Avenue Supermarts Limited"
+    },
+    "DRREDDY": {
+      "name": "Dr. Reddy's Laboratories Limited"
+    },
+    "EICHERMOT": {
+      "name": "Eicher Motors Limited"
+    },
+    "ESCORTS": {
+      "name": "Escorts Kubota Limited"
+    },
+    "EXIDEIND": {
+      "name": "Exide Industries Limited"
+    },
+    "FEDERALBNK": {
+      "name": "The Federal Bank  Limited"
+    },
+    "GAIL": {
+      "name": "GAIL (India) Limited"
+    },
+    "GLENMARK": {
+      "name": "Glenmark Pharmaceuticals Limited"
+    },
+    "GMRAIRPORT": {
+      "name": "GMR AIRPORTS LIMITED"
+    },
+    "GNFC": {
+      "name": "Gujarat Narmada Valley Fertilizers and Chemicals Limited"
+    },
+    "GODREJCP": {
+      "name": "Godrej Consumer Products Limited"
+    },
+    "GODREJPROP": {
+      "name": "Godrej Properties Limited"
+    },
+    "GRANULES": {
+      "name": "Granules India Limited"
+    },
+    "GRASIM": {
+      "name": "Grasim Industries Limited"
+    },
+    "GUJGASLTD": {
+      "name": "Gujarat Gas Limited"
+    },
+    "HAL": {
+      "name": "Hindustan Aeronautics Limited"
+    },
+    "HAVELLS": {
+      "name": "Havells India Limited"
+    },
+    "HCLTECH": {
+      "name": "HCL Technologies Limited"
+    },
+    "HDFCAMC": {
+      "name": "HDFC Asset Management Company Limited"
+    },
+    "HDFCBANK": {
+      "name": "HDFC Bank Limited"
+    },
+    "HDFCLIFE": {
+      "name": "HDFC Life Insurance Company Limited"
+    },
+    "HEROMOTOCO": {
+      "name": "Hero MotoCorp Limited"
+    },
+    "HFCL": {
+      "name": "HFCL Limited"
+    },
+    "HINDALCO": {
+      "name": "Hindalco Industries Limited"
+    },
+    "HINDCOPPER": {
+      "name": "Hindustan Copper Limited"
+    },
+    "HINDPETRO": {
+      "name": "Hindustan Petroleum Corporation Limited"
+    },
+    "HINDUNILVR": {
+      "name": "Hindustan Unilever Limited"
+    },
+    "HUDCO": {
+      "name": "Housing & Urban Development Corporation Limited"
+    },
+    "ICICIBANK": {
+      "name": "ICICI Bank Limited"
+    },
+    "ICICIGI": {
+      "name": "ICICI Lombard General Insurance Company Limited"
+    },
+    "ICICIPRULI": {
+      "name": "ICICI Prudential Life Insurance Company Limited"
+    },
+    "IDEA": {
+      "name": "Vodafone Idea Limited"
+    },
+    "IDFCFIRSTB": {
+      "name": "IDFC First Bank Limited"
+    },
+    "IEX": {
+      "name": "Indian Energy Exchange Limited"
+    },
+    "IGL": {
+      "name": "Indraprastha Gas Limited"
+    },
+    "INDHOTEL": {
+      "name": "The Indian Hotels Company Limited"
+    },
+    "INDIAMART": {
+      "name": "Indiamart Intermesh Limited"
+    },
+    "INDIANB": {
+      "name": "Indian Bank"
+    },
+    "INDIGO": {
+      "name": "InterGlobe Aviation Limited"
+    },
+    "INDUSINDBK": {
+      "name": "IndusInd Bank Limited"
+    },
+    "INDUSTOWER": {
+      "name": "Indus Towers Limited"
+    },
+    "INFY": {
+      "name": "Infosys Limited"
+    },
+    "IOC": {
+      "name": "Indian Oil Corporation Limited"
+    },
+    "IPCALAB": {
+      "name": "IPCA Laboratories Limited"
+    },
+    "IRB": {
+      "name": "IRB Infrastructure Developers Limited"
+    },
+    "IRCTC": {
+      "name": "Indian Railway Catering And Tourism Corporation Limited"
+    },
+    "IRFC": {
+      "name": "Indian Railway Finance Corporation Limited"
+    },
+    "ITC": {
+      "name": "ITC Limited"
+    },
+    "JINDALSTEL": {
+      "name": "Jindal Steel & Power Limited"
+    },
+    "JIOFIN": {
+      "name": "Jio Financial Services Limited"
+    },
+    "JKCEMENT": {
+      "name": "JK Cement Limited"
+    },
+    "JSL": {
+      "name": "Jindal Stainless Limited"
+    },
+    "JSWENERGY": {
+      "name": "JSW Energy Limited"
+    },
+    "JSWSTEEL": {
+      "name": "JSW Steel Limited"
+    },
+    "JUBLFOOD": {
+      "name": "Jubilant Foodworks Limited"
+    },
+    "KALYANKJIL": {
+      "name": "Kalyan Jewellers India Limited"
+    },
+    "KEI": {
+      "name": "KEI Industries Limited"
+    },
+    "KOTAKBANK": {
+      "name": "Kotak Mahindra Bank Limited"
+    },
+    "KPITTECH": {
+      "name": "KPIT Technologies Limited"
+    },
+    "LALPATHLAB": {
+      "name": "Dr. Lal Path Labs Ltd."
+    },
+    "LAURUSLABS": {
+      "name": "Laurus Labs Limited"
+    },
+    "LICHSGFIN": {
+      "name": "LIC Housing Finance Limited"
+    },
+    "LICI": {
+      "name": "Life Insurance Corporation Of India"
+    },
+    "LODHA": {
+      "name": "Macrotech Developers Limited"
+    },
+    "LT": {
+      "name": "Larsen & Toubro Limited"
+    },
+    "LTF": {
+      "name": "L&T Finance Limited"
+    },
+    "LTIM": {
+      "name": "LTIMindtree Limited"
+    },
+    "LTTS": {
+      "name": "L&T Technology Services Limited"
+    },
+    "LUPIN": {
+      "name": "Lupin Limited"
+    },
+    "M&M": {
+      "name": "Mahindra & Mahindra Limited"
+    },
+    "M&MFIN": {
+      "name": "Mahindra & Mahindra Financial Services Limited"
+    },
+    "MANAPPURAM": {
+      "name": "Manappuram Finance Limited"
+    },
+    "MARICO": {
+      "name": "Marico Limited"
+    },
+    "MARUTI": {
+      "name": "Maruti Suzuki India Limited"
+    },
+    "MAXHEALTH": {
+      "name": "Max Healthcare Institute Limited"
+    },
+    "MCX": {
+      "name": "Multi Commodity Exchange of India Limited"
+    },
+    "METROPOLIS": {
+      "name": "Metropolis Healthcare Limited"
+    },
+    "MFSL": {
+      "name": "Max Financial Services Limited"
+    },
+    "MGL": {
+      "name": "Mahanagar Gas Limited"
+    },
+    "MOTHERSON": {
+      "name": "Samvardhana Motherson International Limited"
+    },
+    "MPHASIS": {
+      "name": "MphasiS Limited"
+    },
+    "MRF": {
+      "name": "MRF Limited"
+    },
+    "MUTHOOTFIN": {
+      "name": "Muthoot Finance Limited"
+    },
+    "NATIONALUM": {
+      "name": "National Aluminium Company Limited"
+    },
+    "NAUKRI": {
+      "name": "Info Edge (India) Limited"
+    },
+    "NAVINFLUOR": {
+      "name": "Navin Fluorine International Limited"
+    },
+    "NCC": {
+      "name": "NCC Limited"
+    },
+    "NESTLEIND": {
+      "name": "Nestle India Limited"
+    },
+    "NHPC": {
+      "name": "NHPC Limited"
+    },
+    "NMDC": {
+      "name": "NMDC Limited"
+    },
+    "NTPC": {
+      "name": "NTPC Limited"
+    },
+    "NYKAA": {
+      "name": "FSN E-Commerce Ventures Limited"
+    },
+    "OBEROIRLTY": {
+      "name": "Oberoi Realty Limited"
+    },
+    "OFSS": {
+      "name": "Oracle Financial Services Software Limited"
+    },
+    "OIL": {
+      "name": "Oil India Limited"
+    },
+    "ONGC": {
+      "name": "Oil & Natural Gas Corporation Limited"
+    },
+    "PAGEIND": {
+      "name": "Page Industries Limited"
+    },
+    "PAYTM": {
+      "name": "One 97 Communications Limited"
+    },
+    "PEL": {
+      "name": "Piramal Enterprises Limited"
+    },
+    "PERSISTENT": {
+      "name": "Persistent Systems Limited"
+    },
+    "PETRONET": {
+      "name": "Petronet LNG Limited"
+    },
+    "PFC": {
+      "name": "Power Finance Corporation Limited"
+    },
+    "PIDILITIND": {
+      "name": "Pidilite Industries Limited"
+    },
+    "PIIND": {
+      "name": "PI Industries Limited"
+    },
+    "PNB": {
+      "name": "Punjab National Bank"
+    },
+    "POLICYBZR": {
+      "name": "PB Fintech Limited"
+    },
+    "POLYCAB": {
+      "name": "Polycab India Limited"
+    },
+    "POONAWALLA": {
+      "name": "Poonawalla Fincorp Limited"
+    },
+    "POWERGRID": {
+      "name": "Power Grid Corporation of India Limited"
+    },
+    "PRESTIGE": {
+      "name": "Prestige Estates Projects Limited"
+    },
+    "PVRINOX": {
+      "name": "PVR INOX Limited"
+    },
+    "RAMCOCEM": {
+      "name": "The Ramco Cements Limited"
+    },
+    "RBLBANK": {
+      "name": "RBL Bank Limited"
+    },
+    "RECLTD": {
+      "name": "REC Limited"
+    },
+    "RELIANCE": {
+      "name": "Reliance Industries Limited"
+    },
+    "SAIL": {
+      "name": "Steel Authority of India Limited"
+    },
+    "SBICARD": {
+      "name": "SBI Cards and Payment Services Limited"
+    },
+    "SBILIFE": {
+      "name": "SBI Life Insurance Company Limited"
+    },
+    "SBIN": {
+      "name": "State Bank of India"
+    },
+    "SHREECEM": {
+      "name": "SHREE CEMENT LIMITED"
+    },
+    "SHRIRAMFIN": {
+      "name": "Shriram Finance Limited"
+    },
+    "SIEMENS": {
+      "name": "Siemens Limited"
+    },
+    "SJVN": {
+      "name": "SJVN Limited"
+    },
+    "SONACOMS": {
+      "name": "Sona BLW Precision Forgings Limited"
+    },
+    "SRF": {
+      "name": "SRF Limited"
+    },
+    "SUNPHARMA": {
+      "name": "Sun Pharmaceutical Industries Limited"
+    },
+    "SUNTV": {
+      "name": "Sun TV Network Limited"
+    },
+    "SUPREMEIND": {
+      "name": "Supreme Industries Limited"
+    },
+    "SYNGENE": {
+      "name": "Syngene International Limited"
+    },
+    "TATACHEM": {
+      "name": "Tata Chemicals Limited"
+    },
+    "TATACOMM": {
+      "name": "Tata Communications Limited"
+    },
+    "TATACONSUM": {
+      "name": "TATA CONSUMER PRODUCTS LIMITED"
+    },
+    "TATAELXSI": {
+      "name": "Tata Elxsi Limited"
+    },
+    "TATAMOTORS": {
+      "name": "Tata Motors Limited"
+    },
+    "TATAPOWER": {
+      "name": "Tata Power Company Limited"
+    },
+    "TATASTEEL": {
+      "name": "Tata Steel Limited"
+    },
+    "TCS": {
+      "name": "Tata Consultancy Services Limited"
+    },
+    "TECHM": {
+      "name": "Tech Mahindra Limited"
+    },
+    "TIINDIA": {
+      "name": "Tube Investments of India Limited"
+    },
+    "TITAN": {
+      "name": "Titan Company Limited"
+    },
+    "TORNTPHARM": {
+      "name": "Torrent Pharmaceuticals Limited"
+    },
+    "TRENT": {
+      "name": "Trent Limited"
+    },
+    "TVSMOTOR": {
+      "name": "TVS Motor Company Limited"
+    },
+    "UBL": {
+      "name": "United Breweries Limited"
+    },
+    "ULTRACEMCO": {
+      "name": "UltraTech Cement Limited"
+    },
+    "UNIONBANK": {
+      "name": "Union Bank of India"
+    },
+    "UNITDSPR": {
+      "name": "United Spirits Limited"
+    },
+    "UPL": {
+      "name": "UPL Limited"
+    },
+    "VBL": {
+      "name": "Varun Beverages Limited"
+    },
+    "VEDL": {
+      "name": "Vedanta Limited"
+    },
+    "VOLTAS": {
+      "name": "Voltas Limited"
+    },
+    "WIPRO": {
+      "name": "Wipro Limited"
+    },
+    "YESBANK": {
+      "name": "Yes Bank Limited"
+    },
+    "ZOMATO": {
+      "name": "Zomato Limited"
+    },
+    "ZYDUSLIFE": {
+      "name": "Zydus Lifesciences Limited"
+    }
+  }
 };
 
 // Helper function to get symbol type (index or equity)
 export const getSymbolType = (symbol: string): 'indices' | 'equities' => {
     return symbol in AVAILABLE_SYMBOLS.indices ? 'indices' : 'equities';
-};
-
-// Helper function to get symbol stride
-export const getSymbolStride = (symbol: string): number => {
-    const type = getSymbolType(symbol);
-    return AVAILABLE_SYMBOLS[type][symbol]?.stride || 0;
 };
 
 // Helper function to get symbol config
@@ -775,9 +715,4 @@ export const getAllSymbols = (): string[] => {
         ...Object.keys(AVAILABLE_SYMBOLS.indices),
         ...Object.keys(AVAILABLE_SYMBOLS.equities)
     ];
-};
-
-// Helper function to calculate ATM strike
-export const calculateATMStrike = (spotPrice: number, stride: number): number => {
-    return Math.ceil(spotPrice / stride) * stride;
 };

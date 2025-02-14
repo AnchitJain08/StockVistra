@@ -3,6 +3,8 @@ const axios = require('axios');
 const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
+const { createEodFiles } = require('./scripts/createEodFiles');
+const { updateAllSymbolsEODPCR } = require('./scripts/updateEodPCR');
 const app = express();
 
 // Enable CORS for all origins in development
@@ -472,7 +474,14 @@ app.get('/api/option-chain/:type/:symbol', async (req, res) => {
 
         res.json(response.data);
     } catch (error) {
-        console.error('Error fetching data:', error);
+        // Sanitize error logging to exclude sensitive information
+        const sanitizedError = {
+            message: error.message,
+            code: error.code,
+            status: error.response?.status,
+            statusText: error.response?.statusText
+        };
+        console.error('Error fetching data:', sanitizedError);
         res.status(500).json({ error: 'Failed to fetch data from NSE' });
     }
 });
@@ -557,18 +566,63 @@ async function initializeDirectories() {
 }
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, '0.0.0.0', () => {});
 
-// Initialize directories and files on server start
-initializeDirectories();
-initializeCookies();
-initFavoritesFile();
+(async () => {
+    try {
+        await initializeDirectories();
+        await initFavoritesFile();
+        await initializeCookies();
+        
+        // Create EOD files if they don't exist
+        await createEodFiles();
 
-// Start background tasks with optimized intervals
-updateFavoriteSymbolsData();
-setInterval(updateFavoriteSymbolsData, 10 * 1000);
-setInterval(initializeCookies, 30 * 60 * 1000);
-setInterval(cleanupOldData, 24 * 60 * 60 * 1000);
+        // Start periodic updates
+        setInterval(async () => {
+            try {
+                await updateFavoriteSymbolsData();
+                await cleanupOldData();
+                
+                // Update EOD PCR data after market hours
+                const now = new Date();
+                const hour = now.getHours();
+                const minute = now.getMinutes();
+                const marketClosed = hour > 15 || (hour === 15 && minute >= 30); // After 3:30 PM
+                const beforeNextMarket = hour < 9 || (hour === 9 && minute < 15); // Before 9:15 AM
+                
+                if (marketClosed || beforeNextMarket) {
+                    const symbols = await getFavoriteSymbols();
+                    const pcrData = {};
+                    
+                    for (const symbol of symbols) {
+                        try {
+                            const symbolData = await getSymbolData(symbol);
+                            if (symbolData && symbolData.length > 0) {
+                                const latestData = symbolData[symbolData.length - 1];
+                                pcrData[symbol] = latestData.pcr || 0;
+                            }
+                        } catch (error) {
+                            console.error(`Error getting PCR data for ${symbol}:`, error);
+                        }
+                    }
+                    
+                    if (Object.keys(pcrData).length > 0) {
+                        await updateAllSymbolsEODPCR(pcrData);
+                    }
+                }
+            } catch (error) {
+                console.error('Error in periodic update:', error);
+            }
+        }, CHECK_INTERVAL);
+
+    } catch (error) {
+        console.error('Error during server initialization:', error);
+        process.exit(1);
+    }
+})();
+
+app.listen(PORT, () => {
+    console.log('Server started successfully');
+});
 
 // Get favorite symbols
 app.get('/api/favorites', async (req, res) => {

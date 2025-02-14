@@ -8,37 +8,45 @@ A comprehensive platform for analyzing Put-Call Ratio (PCR) and option chain dat
 - Real-time PCR (Put-Call Ratio) tracking and visualization
 - Option chain analysis with detailed metrics
 - Historical data analysis with interactive charts
-- Market sentiment indicators
+- Market sentiment indicators based on PCR trends
+- Support for multiple stock indices and individual stocks
 
 ### Data Visualization
 - Interactive time-series charts for PCR trends
 - Color-coded option chain tables for better data interpretation
 - Responsive and intuitive user interface
-- Real-time data updates
+- Real-time data updates with automatic refresh
+- Custom date range selection for historical analysis
 
 ### Technical Features
 - Strike price analysis with color indicators
 - ATM (At-The-Money) strike highlighting
-- Customizable data views
-- Historical data tracking
+- Customizable data views and filters
+- Historical data tracking and comparison
+- Bulk data export functionality
+- Favorite symbols watchlist
 
 ## Tech Stack
 
 ### Frontend
-- React.js with TypeScript
-- Material-UI for component styling
-- Recharts for data visualization
+- React.js 18 with TypeScript
+- Material-UI v5 for modern component styling
+- Recharts for interactive data visualization
 - Custom state management with React hooks
+- React Router v6 for navigation
 
 ### Backend
-- Node.js with Express
-- Real-time data processing
-- RESTful API endpoints
-- JSON-based data storage
+- Node.js 16+ with Express
+- Real-time data processing and caching
+- RESTful API endpoints with proper error handling
+- Rate limiting and request validation
+- JSON-based data storage with efficient querying
 
 ### Data Storage
 - Local JSON files for data persistence
-- Real-time data updates
+- Real-time data updates with change detection
+- Automated data backup and recovery
+- Data validation and sanitization
 
 ## Project Structure
 
@@ -80,11 +88,15 @@ Key Directories:
 - `frontend/`: React application with TypeScript
   - `components/`: Reusable UI components including charts and tables
   - `pages/`: Analysis and Compare pages for different views
-  - `styles/`: Theme configuration
-  - `services/`: API integration
+  - `styles/`: Theme configuration and global styles
+  - `services/`: API integration and data fetching
+  - `utils/`: Helper functions and utilities
+  - `types/`: TypeScript type definitions
+  - `store/`: State management
 
 - `backend/`: Node.js server
   - `data/`: JSON-based market data storage
+  - `scripts/`: Data processing and update scripts
   - `server.js`: Express API endpoints
 
 ## Getting Started
@@ -93,6 +105,22 @@ Key Directories:
 
 - Node.js (v16 or higher)
 - Git
+- npm (v7 or higher)
+
+### Environment Setup
+
+1. Frontend Environment Variables (.env)
+```
+REACT_APP_API_URL=http://localhost:4000
+REACT_APP_REFRESH_INTERVAL=30000
+```
+
+2. Backend Environment Variables (.env)
+```
+PORT=4000
+NODE_ENV=development
+DATA_UPDATE_INTERVAL=300000
+```
 
 ### Installation
 
@@ -106,7 +134,12 @@ cd StockVistra
 ```bash
 cd frontend
 npm install
+
+# Development mode
 npm start
+
+# Production build
+npm run build
 ```
 The frontend will be available at `http://localhost:3000`
 
@@ -114,9 +147,28 @@ The frontend will be available at `http://localhost:3000`
 ```bash
 cd backend
 npm install
+
+# Start development server
 node server.js
+
+# Update EOD data
+node scripts/updateEodPCR.js
 ```
 The backend API will be available at `http://localhost:4000`
+
+### Available Scripts
+
+Frontend:
+- `npm start`: Start development server
+- `npm run build`: Create production build
+- `npm test`: Run test suite
+- `npm run lint`: Run ESLint
+- `npm run format`: Format code with Prettier
+
+Backend:
+- `node server.js`: Start the API server
+- `node scripts/createEodFiles.js`: Initialize EOD data files
+- `node scripts/updateEodPCR.js`: Update EOD PCR data
 
 ## Usage
 
@@ -125,6 +177,17 @@ The backend API will be available at `http://localhost:4000`
 3. Analyze option chain data with color-coded indicators
 4. Compare multiple stocks' PCR trends
 5. Track favorite symbols for quick access
+6. Export data in various formats
+7. Customize date ranges for historical analysis
+
+## Error Handling
+
+- The application includes comprehensive error handling for:
+  - Network connectivity issues
+  - Invalid data formats
+  - API rate limiting
+  - Server timeouts
+  - Data validation errors
 
 ## Contributing
 
@@ -134,6 +197,18 @@ The backend API will be available at `http://localhost:4000`
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+### Development Guidelines
+
+- Follow the existing code style
+- Write meaningful commit messages
+- Add appropriate documentation
+- Include unit tests for new features
+- Update the README for significant changes
+
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
+
+## Support
+
+For support, please open an issue in the GitHub repository or contact the maintainers.

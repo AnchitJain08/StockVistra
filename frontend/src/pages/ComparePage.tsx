@@ -14,7 +14,6 @@ import { useTheme } from '@mui/material/styles';
 import { useDispatch, useSelector } from 'react-redux';
 import StockSelector from '../components/StockSelector';
 import CompareChart from '../components/CompareChart';
-import NoStockMessage from '../components/NoStockMessage';
 import { setSelectedStock } from '../store/optionChainSlice';
 import { getSymbolConfig } from '../constants/symbols';
 import { Stock } from '../types';
@@ -125,28 +124,13 @@ const ComparePage: React.FC = () => {
     const fetchFavorites = async () => {
       try {
         const favorites = await api.getFavorites();
-        console.log('Fetched favorites:', favorites);
         setFavSymbols(favorites);
       } catch (error) {
-        console.error('Error fetching favorites:', error);
+        // Handle error silently
       }
     };
     fetchFavorites();
   }, []);
-
-  const isAtLeastOneFavorite = favSymbols && (
-    (selectedStock?.symbol && favSymbols.includes(selectedStock.symbol)) ||
-    (selectedStock2?.symbol && favSymbols.includes(selectedStock2.symbol)) ||
-    (selectedStock3?.symbol && favSymbols.includes(selectedStock3.symbol))
-  );
-
-  console.log('Debug chart visibility:', {
-    favSymbols,
-    selectedStock: selectedStock?.symbol,
-    selectedStock2: selectedStock2?.symbol,
-    selectedStock3: selectedStock3?.symbol,
-    isAtLeastOneFavorite
-  });
 
   const formatIndianNumber = (value: number | undefined): string => {
     if (value === undefined || value === null) return 'N/A';
@@ -226,8 +210,8 @@ const ComparePage: React.FC = () => {
   ];
 
   const renderMetricsTable = (metrics1: any, metrics2: any, metrics3: any) => {
-    if (!metrics1 && !metrics2 && !metrics3) return null;
-
+    if (!selectedStock?.symbol && !selectedStock2?.symbol && !selectedStock3?.symbol) return null;
+  
     return (
       <StyledTableContainer>
         <Table>
@@ -248,18 +232,20 @@ const ComparePage: React.FC = () => {
                   </Typography>
                 </LabelCell>
                 <ValueCell>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: typeof row.value === 'object' ? row.value.color : '#000000',
-                      fontWeight: 400
-                    }}
-                  >
-                    {typeof row.value === 'object' ? row.value.value : row.value}
-                  </Typography>
+                  {selectedStock?.symbol && (
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: typeof row.value === 'object' ? row.value.color : '#000000',
+                        fontWeight: 400
+                      }}
+                    >
+                      {typeof row.value === 'object' ? row.value.value : row.value}
+                    </Typography>
+                  )}
                 </ValueCell>
                 <ValueCell>
-                  {metrics2 && (
+                  {selectedStock2?.symbol && (
                     <Typography 
                       variant="body2" 
                       sx={{ 
@@ -272,7 +258,7 @@ const ComparePage: React.FC = () => {
                   )}
                 </ValueCell>
                 <ValueCell>
-                  {metrics3 && (
+                  {selectedStock3?.symbol && (
                     <Typography 
                       variant="body2" 
                       sx={{ 
@@ -342,7 +328,6 @@ const ComparePage: React.FC = () => {
         setData([]);
       }
     } catch (error) {
-      console.error('Error fetching symbol data:', error);
       setData([]);
     }
   };
@@ -516,7 +501,8 @@ const ComparePage: React.FC = () => {
       <Box sx={{ 
         display: 'flex', 
         flexDirection: { xs: 'column', sm: 'row' }, 
-        gap: 2
+        gap: 2,
+        mb: 3
       }}>
         <Box 
           className="css-1xz3dvu"
@@ -624,44 +610,21 @@ const ComparePage: React.FC = () => {
         </Box>
       </Box>
 
-      {selectedStock || selectedStock2 || selectedStock3 ? (
-        isAtLeastOneFavorite ? (
-          <>
-            <Box sx={{
-              bgcolor: 'background.paper',
-              borderRadius: 2,
-              overflow: 'hidden',
-              mt: 2
-            }}>
-              <CompareChart
-                data={{
-                  ...(selectedStock?.symbol && favSymbols.includes(selectedStock.symbol) ? { [selectedStock.symbol]: historicalData1 } : {}),
-                  ...(selectedStock2?.symbol && favSymbols.includes(selectedStock2.symbol) ? { [selectedStock2.symbol]: historicalData2 } : {}),
-                  ...(selectedStock3?.symbol && favSymbols.includes(selectedStock3.symbol) ? { [selectedStock3.symbol]: historicalData3 } : {})
-                }}
-                timeRange={timeRange}
-                onTimeRangeChange={setTimeRange}
-              />
-            </Box>
-
-            <StyledTableContainer>
-              {renderMetricsTable(
-                selectedStock?.symbol && favSymbols.includes(selectedStock.symbol) ? compareData.metrics : undefined,
-                selectedStock2?.symbol && favSymbols.includes(selectedStock2.symbol) ? compareData2.metrics : undefined,
-                selectedStock3?.symbol && favSymbols.includes(selectedStock3.symbol) ? compareData3.metrics : undefined
-              )}
-            </StyledTableContainer>
-          </>
-        ) : (
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Typography variant="body1" color="text.secondary">
-              Please select at least one favorite stock to view the comparison chart.
-            </Typography>
-          </Box>
-        )
-      ) : (
-        <NoStockMessage />
+      {(selectedStock?.symbol || selectedStock2?.symbol || selectedStock3?.symbol) && (
+        <Box sx={{ mb: 3 }}>
+          <CompareChart
+            data={{
+              ...(selectedStock?.symbol ? { [selectedStock.symbol]: historicalData1 } : {}),
+              ...(selectedStock2?.symbol ? { [selectedStock2.symbol]: historicalData2 } : {}),
+              ...(selectedStock3?.symbol ? { [selectedStock3.symbol]: historicalData3 } : {})
+            }}
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
+          />
+        </Box>
       )}
+
+      {renderMetricsTable(compareData.metrics, compareData2.metrics, compareData3.metrics)}
     </Box>
   );
 };
